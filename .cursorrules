@@ -1,0 +1,100 @@
+// React Native Expo .cursorrules
+
+// React Native Expo best practices
+
+const reactNativeExpoBestPractices = [
+  "Use functional components with hooks",
+  "Utilize Expo SDK features and APIs",
+  "Implement proper navigation using Expo Router",
+  "Use Expo's asset system for images and fonts",
+  "Implement proper error handling and crash reporting",
+  "Utilize Expo's push notification system",
+];
+
+// Folder structure
+
+const folderStructure = `
+assets/
+src/
+  components/
+  screens/
+  navigation/
+  hooks/
+  utils/
+App.js
+app.json
+`;
+
+// Additional instructions
+
+const additionalInstructions = `
+1. Use TypeScript for type safety
+2. Implement proper styling using StyleSheet
+3. Utilize Expo's vector icons
+4. Use Expo's secure store for sensitive data
+5. Implement proper offline support
+6. Follow React Native best practices for performance
+7. Use Expo's OTA updates for quick deployments
+`;
+
+// CRITICAL: Verification Steps Before Running Commands
+// Always verify these before executing npm/node commands:
+
+const verificationChecklist = `
+BEFORE running any npm/node command (npm start, npm install, npx, etc.):
+
+1. VERIFY DEPENDENCIES ARE INSTALLED:
+   - Check if node_modules/ exists and is not empty
+   - Verify critical packages exist (e.g., node_modules/expo, node_modules/react)
+   - If node_modules is missing or incomplete, RUN 'npm install' FIRST
+
+2. VERIFY PROJECT STRUCTURE:
+   - Check that package.json exists and is valid JSON
+   - Verify required config files exist (app.json, tsconfig.json, metro.config.js if needed)
+   - Ensure entry point file exists (index.ts or App.tsx)
+
+3. VERIFY CONFIGURATION:
+   - Check package.json "main" field is correct
+   - Verify app.json is properly formatted
+   - Ensure metro.config.js exists if Metro bundler is needed
+
+4. BEFORE TESTING/RUNNING APP:
+   - Always run 'npm install' if node_modules is missing or after package.json changes
+   - Clear Metro cache if previous errors occurred: 'npm start -- --clear'
+   - Verify all dependencies in package.json are installed
+
+5. ERROR RESOLUTION ORDER:
+   - If module resolution errors: Check node_modules exists → Run npm install → Clear cache
+   - If Metro errors: Clear cache first → Verify config → Reinstall if needed
+   - Never skip verification steps - always check prerequisites before proceeding
+`;
+
+// Development Workflow Rules
+const developmentWorkflow = `
+STEP-BY-STEP DEVELOPMENT PROCESS:
+
+1. EVALUATE CURRENT STATE:
+   - List files in project directory
+   - Check package.json for dependencies
+   - Verify node_modules status
+   - Check for required config files
+
+2. VERIFY PREREQUISITES:
+   - Dependencies installed? → If not, run npm install FIRST
+   - Config files present? → Create if missing
+   - Previous errors? → Clear cache and reinstall if needed
+
+3. MAKE CHANGES:
+   - Create/modify files as needed
+   - Update package.json if adding dependencies
+
+4. VERIFY AFTER CHANGES:
+   - If package.json changed → Run npm install
+   - If config changed → Clear cache before testing
+   - Verify files were created/modified correctly
+
+5. TEST INCREMENTALLY:
+   - Test each change before moving to next step
+   - Don't assume previous steps worked - verify
+   - Ask user to confirm before proceeding to next phase
+`;
