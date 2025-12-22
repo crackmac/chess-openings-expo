@@ -10,6 +10,9 @@ export interface OpeningProgress {
   averageAccuracy: number;
   completed: boolean;
   masteryLevel: number; // 0-5 stars
+  difficultyRating?: 'hard' | 'good' | 'easy';
+  lastRated?: Date;
+  ratingHistory?: Array<{ date: Date; rating: 'hard' | 'good' | 'easy' }>;
 }
 
 export interface SessionStats {

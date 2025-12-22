@@ -18,6 +18,7 @@ import { OpeningCard } from '../components/OpeningCard/OpeningCard';
 import { OpeningDatabase } from '../services/chess/openingDatabase';
 import { allOpenings } from '../data/openings';
 import { Opening } from '../types';
+import { useProgress } from '../hooks/useProgress';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -26,6 +27,7 @@ type DifficultyFilter = 'all' | 'beginner' | 'intermediate' | 'advanced';
 
 export const OpeningBrowserScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { getOpeningProgress } = useProgress();
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>('all');
@@ -160,6 +162,7 @@ export const OpeningBrowserScreen: React.FC = () => {
               key={opening.id}
               opening={opening}
               onPress={() => handleOpeningPress(opening)}
+              progress={getOpeningProgress(opening.id)}
             />
           ))
         )}

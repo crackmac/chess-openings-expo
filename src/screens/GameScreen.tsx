@@ -4,11 +4,13 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Pressable } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChessBoard } from '../components/ChessBoard';
+import { DifficultyRating } from '../components/DifficultyRating';
 import { useOpeningPractice } from '../hooks/useOpeningPractice';
+import { useProgress } from '../hooks/useProgress';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -18,6 +20,8 @@ export const GameScreen: React.FC = () => {
   const route = useRoute<GameRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { opening, userColor } = route.params;
+  const { getOpeningProgress } = useProgress();
+
   const {
     engine,
     selectedSquare,
@@ -28,16 +32,28 @@ export const GameScreen: React.FC = () => {
     totalMoves,
     accuracy,
     lastMoveCorrect,
+    sessionEnded,
+    showRatingPrompt,
+    openingCompleted,
+    waitingForInteraction,
     setOpening,
     selectSquare,
     makeUserMove,
     resetSession,
+    endSession,
+    rateOpening,
+    skipRating,
+    checkOpeningCompletion,
+    handleInteraction,
+    currentTurn,
   } = useOpeningPractice();
 
   // Initialize opening when component mounts
   React.useEffect(() => {
     setOpening(opening, userColor);
   }, [opening.id, userColor, setOpening]);
+
+  const currentProgress = opening ? getOpeningProgress(opening.id) : null;
 
   const handleMove = (move: { from: string; to: string; san: string }) => {
     if (selectedSquare) {
@@ -48,8 +64,21 @@ export const GameScreen: React.FC = () => {
     }
   };
 
-  const handleSquarePress = (square: string) => {
-    if (!isUserTurn) {
+  const handleSquarePress = React.useCallback((square: string) => {
+    // Check turn directly from engine to avoid stale state
+    const currentEngineTurn = engine.getTurn();
+    console.log('handleSquarePress called:', {
+      square,
+      currentEngineTurn,
+      currentTurn,
+      userColor,
+      sessionEnded,
+      isUserTurn,
+      canSelect: currentEngineTurn === userColor && !sessionEnded,
+    });
+
+    if (currentEngineTurn !== userColor || sessionEnded) {
+      console.log('Square press blocked - not user turn or session ended');
       return;
     }
 
@@ -64,38 +93,59 @@ export const GameScreen: React.FC = () => {
     } else {
       // Select square
       const piece = engine.getPiece(square);
+      console.log('Checking piece:', { square, piece, pieceColor: piece?.color, userColor });
       if (piece && piece.color === userColor) {
+        console.log('Selecting square:', square);
         selectSquare(square);
+      } else {
+        console.log('Cannot select - no piece or wrong color');
       }
     }
-  };
+  }, [engine, userColor, sessionEnded, selectedSquare, makeUserMove, selectSquare, isUserTurn, currentTurn]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <Pressable
+      onPress={waitingForInteraction ? handleInteraction : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.subtitle}>
           Playing as {userColor === 'white' ? 'White' : 'Black'}
         </Text>
       </View>
 
-      <View style={styles.stats}>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Accuracy</Text>
-          <Text style={styles.statValue}>{accuracy.toFixed(0)}%</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Correct</Text>
-          <Text style={styles.statValue}>
-            {correctMoves}/{totalMoves}
+      {openingCompleted ? (
+        <View style={styles.completionBanner}>
+          <Text style={styles.completionText}>
+            🎉 You know the {opening.name} opening!
           </Text>
+          {waitingForInteraction && (
+            <Text style={styles.tapToContinueText}>
+              Tap anywhere to continue...
+            </Text>
+          )}
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Turn</Text>
-          <Text style={styles.statValue}>
-            {isUserTurn ? 'Your Turn' : 'AI Turn'}
-          </Text>
+      ) : (
+        <View style={styles.stats}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Accuracy</Text>
+            <Text style={styles.statValue}>{accuracy.toFixed(0)}%</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Correct</Text>
+            <Text style={styles.statValue}>
+              {correctMoves}/{totalMoves}
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Turn</Text>
+            <Text style={styles.statValue}>
+              {isUserTurn ? 'Your Turn' : 'AI Turn'}
+            </Text>
+          </View>
         </View>
-      </View>
+      )}
 
       {lastMoveCorrect !== null && (
         <View
@@ -132,7 +182,37 @@ export const GameScreen: React.FC = () => {
         >
           <Text style={styles.buttonText}>Deselect</Text>
         </TouchableOpacity>
+        {!sessionEnded && (
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              // Only show rating if opening was completed correctly
+              const completed = checkOpeningCompletion();
+              endSession(completed);
+            }}
+          >
+            <Text style={styles.buttonText}>End Session</Text>
+          </TouchableOpacity>
+        )}
       </View>
+
+      <DifficultyRating
+        visible={showRatingPrompt}
+        currentRating={currentProgress?.difficultyRating}
+        openingName={opening.name}
+        onRate={async (rating) => {
+          const success = await rateOpening(rating);
+          if (success) {
+            // Navigate back to main screen after rating
+            navigation.navigate('MainTabs');
+          }
+        }}
+        onSkip={() => {
+          skipRating();
+          // Navigate back to main screen after skipping
+          navigation.navigate('MainTabs');
+        }}
+      />
 
       {moveHistory.length > 0 && (
         <View style={styles.moveHistory}>
@@ -149,7 +229,8 @@ export const GameScreen: React.FC = () => {
           </ScrollView>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </Pressable>
   );
 };
 
@@ -189,6 +270,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+  },
+  completionBanner: {
+    backgroundColor: '#4caf50',
+    padding: 20,
+    borderRadius: 8,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  completionText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  tapToContinueText: {
+    fontSize: 14,
+    color: '#fff',
+    textAlign: 'center',
+    opacity: 0.9,
+    fontStyle: 'italic',
   },
   feedback: {
     padding: 12,

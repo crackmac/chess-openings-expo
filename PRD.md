@@ -129,12 +129,21 @@ An interactive mobile app where users:
   - Red X for incorrect moves
 - Audio feedback (optional)
 - Hints when user makes incorrect moves
+- After practice session ends, prompt user to rate opening difficulty:
+  - Rating options: Hard, Good, Easy (Anki-style)
+  - Rating stored per-opening (can be updated on subsequent sessions)
+  - Session ends when:
+    - Opening sequence completed successfully
+    - User manually ends session
+    - Opening theory exhausted
 
 **Acceptance Criteria:**
 - AI follows opening theory accurately
 - User moves are validated immediately
 - Feedback is clear and helpful
 - Game can be reset mid-session
+- Rating prompt appears after session ends
+- Ratings persist across app restarts
 
 #### 4.1.4 Opening Browser
 **Priority:** P1 (High)
@@ -200,6 +209,25 @@ An interactive mobile app where users:
 - Difficulty levels for AI
 - Time controls
 - Opening explorer (tree view)
+
+#### 4.2.5 Opening Roulette (Future Feature)
+**Priority:** P2 (Future Enhancement)
+
+**Requirements:**
+- Random opening selection based on user difficulty ratings
+- Weighted random selection algorithm:
+  - Openings rated "Hard" appear more frequently
+  - Openings rated "Easy" appear less frequently
+  - Openings rated "Good" appear at standard frequency
+- Fuzz factor: Small random variation to prevent predictable patterns
+- Time-based decay: Easy openings gradually increase weight over time
+- Similar to Anki's spaced repetition algorithm
+
+**Acceptance Criteria:**
+- Hard-rated openings appear more often than easy-rated ones
+- Selection feels random but weighted appropriately
+- No predictable patterns in opening selection
+- Algorithm adapts over time based on user performance
 
 ---
 
@@ -470,12 +498,15 @@ chess-openings/
 **Deliverable:** Complete opening browser
 
 ### Phase 4: Progress & Polish (Week 6)
-- Implement progress tracking
+- Implement progress tracking with AsyncStorage
+- Add difficulty rating system (Hard/Good/Easy)
+- Session end detection and rating prompts
+- Display ratings on opening cards
 - Add statistics and analytics
 - Polish UI/UX
 - Testing and bug fixes
 
-**Deliverable:** MVP ready for testing
+**Deliverable:** MVP ready for testing with progress tracking and rating system
 
 ### Phase 5: Enhanced Features (Future)
 - Gamification elements

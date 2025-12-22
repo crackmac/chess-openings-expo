@@ -6,15 +6,12 @@
 import React from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Opening } from '../../types';
+import { OpeningProgress } from '../../types/progress';
 
 interface OpeningCardProps {
   opening: Opening;
   onPress: () => void;
-  progress?: {
-    timesPracticed: number;
-    masteryLevel: number;
-    bestAccuracy: number;
-  };
+  progress?: OpeningProgress | null;
 }
 
 export const OpeningCard: React.FC<OpeningCardProps> = ({
@@ -45,6 +42,32 @@ export const OpeningCard: React.FC<OpeningCardProps> = ({
       );
     }
     return stars;
+  };
+
+  const getRatingColor = (rating?: 'hard' | 'good' | 'easy') => {
+    switch (rating) {
+      case 'hard':
+        return '#f44336';
+      case 'good':
+        return '#2196f3';
+      case 'easy':
+        return '#4caf50';
+      default:
+        return '#999';
+    }
+  };
+
+  const getRatingLabel = (rating?: 'hard' | 'good' | 'easy') => {
+    switch (rating) {
+      case 'hard':
+        return 'Hard';
+      case 'good':
+        return 'Good';
+      case 'easy':
+        return 'Easy';
+      default:
+        return null;
+    }
   };
 
   return (
@@ -90,6 +113,21 @@ export const OpeningCard: React.FC<OpeningCardProps> = ({
               {progress.bestAccuracy.toFixed(0)}%
             </Text>
           </View>
+          {progress.difficultyRating && (
+            <View style={styles.progressRow}>
+              <Text style={styles.progressLabel}>Rating:</Text>
+              <View
+                style={[
+                  styles.ratingBadge,
+                  { backgroundColor: getRatingColor(progress.difficultyRating) },
+                ]}
+              >
+                <Text style={styles.ratingText}>
+                  {getRatingLabel(progress.difficultyRating)}
+                </Text>
+              </View>
+            </View>
+          )}
           <View style={styles.mastery}>
             <Text style={styles.masteryLabel}>Mastery:</Text>
             <View style={styles.stars}>{renderStars(progress.masteryLevel)}</View>
@@ -219,6 +257,16 @@ const styles = StyleSheet.create({
   newBadgeText: {
     fontSize: 12,
     color: '#4caf50',
+    fontWeight: 'bold',
+  },
+  ratingBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: '#fff',
     fontWeight: 'bold',
   },
 });

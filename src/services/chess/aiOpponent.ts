@@ -3,9 +3,9 @@
  * AI that follows opening theory and handles deviations
  */
 
-import { ChessEngine } from './chessEngine';
-import { OpeningDatabase } from './openingDatabase';
-import { Opening, Move } from '../../types';
+import { ChessEngine } from "./chessEngine";
+import { OpeningDatabase } from "./openingDatabase";
+import { Opening, Move } from "../../types";
 
 export class AIOpponent {
   private engine: ChessEngine;
@@ -52,8 +52,20 @@ export class AIOpponent {
     if (theoryMove) {
       // Verify the move is still valid
       if (this.engine.isMoveValid(theoryMove.from, theoryMove.to)) {
+        console.log("AI making theory move:", {
+          move: theoryMove.san,
+          moveHistoryLength: this.moveHistory.length,
+          turn: this.engine.getTurn(),
+        });
         return theoryMove;
+      } else {
+        console.log("Theory move invalid:", theoryMove.san);
       }
+    } else {
+      console.log("No theory move found:", {
+        moveHistoryLength: this.moveHistory.length,
+        turn: this.engine.getTurn(),
+      });
     }
 
     // If no theory move or theory exhausted, make a reasonable move
@@ -61,8 +73,18 @@ export class AIOpponent {
   }
 
   /**
+   * Get the AI's move (without executing it)
+   * Returns the move to make, or null if no move is available
+   * The caller should execute the move on the engine
+   */
+  getMove(): Move | null {
+    return this.getNextMove();
+  }
+
+  /**
    * Make the AI's move
    * Returns the move made, or null if no move was possible
+   * @deprecated Use getMove() instead and let the caller execute the move
    */
   makeMove(): Move | null {
     const move = this.getNextMove();
@@ -87,11 +109,7 @@ export class AIOpponent {
       return false;
     }
 
-    return OpeningDatabase.isMoveInTheory(
-      this.opening,
-      this.moveHistory,
-      move
-    );
+    return OpeningDatabase.isMoveInTheory(this.opening, this.moveHistory, move);
   }
 
   /**
@@ -138,4 +156,3 @@ export class AIOpponent {
     this.moveHistory = [];
   }
 }
-

@@ -3,8 +3,8 @@
  * Manages chess opening data and provides lookup functionality
  */
 
-import { Opening, AlternateLine, Move } from '../../types';
-import { ChessEngine } from './chessEngine';
+import { Opening, AlternateLine, Move } from "../../types";
+import { ChessEngine } from "./chessEngine";
 
 export class OpeningDatabase {
   private openings: Opening[] = [];
@@ -33,7 +33,9 @@ export class OpeningDatabase {
   /**
    * Get openings by difficulty
    */
-  getOpeningsByDifficulty(difficulty: 'beginner' | 'intermediate' | 'advanced'): Opening[] {
+  getOpeningsByDifficulty(
+    difficulty: "beginner" | "intermediate" | "advanced"
+  ): Opening[] {
     return this.openings.filter((opening) => opening.difficulty === difficulty);
   }
 
@@ -64,30 +66,26 @@ export class OpeningDatabase {
   static getExpectedMove(
     opening: Opening,
     moveHistory: Move[],
-    color: 'white' | 'black'
+    color: "white" | "black"
   ): Move | null {
-    // Check if we're still in the main line
-    const mainLineMoves = opening.mainLine.filter(
-      (move) => move.color === color
-    );
-    const moveIndex = moveHistory.length;
-
     // Find matching line (main or alternate)
-    const matchingLine = OpeningDatabase.findMatchingLine(
-      opening,
-      moveHistory
-    );
+    const matchingLine = OpeningDatabase.findMatchingLine(opening, moveHistory);
 
     if (!matchingLine) {
       return null;
     }
 
-    // Get next move for the current color
-    const nextMoves = matchingLine.moves.filter((move) => move.color === color);
-    const expectedMoveIndex = Math.floor(moveIndex / 2);
+    // Find the next move in the matching line
+    // We need to find the move at position moveHistory.length in the line
+    if (moveHistory.length >= matchingLine.moves.length) {
+      return null; // Line is exhausted
+    }
 
-    if (expectedMoveIndex < nextMoves.length) {
-      return nextMoves[expectedMoveIndex];
+    const nextMove = matchingLine.moves[moveHistory.length];
+
+    // Check if this move is for the requested color
+    if (nextMove && nextMove.color === color) {
+      return nextMove;
     }
 
     return null;
@@ -101,10 +99,7 @@ export class OpeningDatabase {
     moveHistory: Move[],
     move: Move
   ): boolean {
-    const matchingLine = OpeningDatabase.findMatchingLine(
-      opening,
-      moveHistory
-    );
+    const matchingLine = OpeningDatabase.findMatchingLine(opening, moveHistory);
 
     if (!matchingLine) {
       return false;
@@ -113,7 +108,7 @@ export class OpeningDatabase {
     const expectedMove = OpeningDatabase.getExpectedMove(
       opening,
       moveHistory,
-      move.color || 'white'
+      move.color || "white"
     );
 
     if (!expectedMove) {
@@ -134,16 +129,20 @@ export class OpeningDatabase {
     opening: Opening,
     moveHistory: Move[]
   ): { moves: Move[] } | null {
-    // Check main line first
-    if (OpeningDatabase.matchesLine(opening.mainLine, moveHistory)) {
-      return { moves: opening.mainLine };
-    }
-
-    // Check alternate lines
+    // Check alternate lines first (they take priority if they match)
+    // Alternate lines can deviate from main line, so we need to check them first
     for (const altLine of opening.alternateLines) {
+      // Check if alternate line matches completely
       if (OpeningDatabase.matchesLine(altLine.moves, moveHistory)) {
+        // If alternate line matches and we have moves, use it
+        // This handles the case where alternate line shares initial moves with main line
         return { moves: altLine.moves };
       }
+    }
+
+    // Check main line if no alternate line matches
+    if (OpeningDatabase.matchesLine(opening.mainLine, moveHistory)) {
+      return { moves: opening.mainLine };
     }
 
     return null;
@@ -184,12 +183,9 @@ export class OpeningDatabase {
   static getTheoryMoves(
     opening: Opening,
     moveHistory: Move[],
-    color: 'white' | 'black'
+    color: "white" | "black"
   ): Move[] {
-    const matchingLine = OpeningDatabase.findMatchingLine(
-      opening,
-      moveHistory
-    );
+    const matchingLine = OpeningDatabase.findMatchingLine(opening, moveHistory);
 
     if (!matchingLine) {
       return [];
@@ -203,4 +199,3 @@ export class OpeningDatabase {
     return nextMoves;
   }
 }
-

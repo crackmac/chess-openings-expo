@@ -25,6 +25,7 @@ export const useChessGame = (initialFen?: string): UseChessGameReturn => {
   const [engine] = useState(() => new ChessEngine(initialFen));
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [lastMove, setLastMove] = useState<Move | null>(null);
+  const [currentTurn, setCurrentTurn] = useState<'white' | 'black'>(() => engine.getTurn());
 
   const makeMove = useCallback(
     (from: string, to: string, promotion?: 'q' | 'r' | 'b' | 'n'): Move | null => {
@@ -32,6 +33,7 @@ export const useChessGame = (initialFen?: string): UseChessGameReturn => {
       if (move) {
         setMoveHistory((prev) => [...prev, move]);
         setLastMove(move);
+        setCurrentTurn(engine.getTurn()); // Update turn after move
         return move;
       }
       return null;
@@ -44,6 +46,7 @@ export const useChessGame = (initialFen?: string): UseChessGameReturn => {
     if (move) {
       setMoveHistory((prev) => prev.slice(0, -1));
       setLastMove(moveHistory[moveHistory.length - 2] || null);
+      setCurrentTurn(engine.getTurn()); // Update turn after undo
       return move;
     }
     return null;
@@ -53,6 +56,7 @@ export const useChessGame = (initialFen?: string): UseChessGameReturn => {
     engine.reset();
     setMoveHistory([]);
     setLastMove(null);
+    setCurrentTurn(engine.getTurn()); // Update turn after reset
   }, [engine]);
 
   const getValidMoves = useCallback(
@@ -66,7 +70,7 @@ export const useChessGame = (initialFen?: string): UseChessGameReturn => {
     engine,
     moveHistory,
     lastMove,
-    currentTurn: engine.getTurn(),
+    currentTurn,
     isCheck: engine.isCheck(),
     isCheckmate: engine.isCheckmate(),
     isStalemate: engine.isStalemate(),

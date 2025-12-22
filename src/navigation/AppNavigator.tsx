@@ -12,6 +12,7 @@ import { OpeningBrowserScreen } from '../screens/OpeningBrowserScreen';
 import { OpeningDetailScreen } from '../screens/OpeningDetailScreen';
 import { GameScreen } from '../screens/GameScreen';
 import { BoardTestScreen } from '../screens/BoardTestScreen';
+import { ProgressScreen } from '../screens/ProgressScreen';
 import { Opening } from '../types';
 
 export type RootStackParamList = {
@@ -28,15 +29,6 @@ export type MainTabParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
-
-// Placeholder Progress Screen (to be implemented later)
-const ProgressScreen = () => {
-  return (
-    <Tab.Navigator>
-      <Tab.Screen name="Browse" component={OpeningBrowserScreen} />
-    </Tab.Navigator>
-  );
-};
 
 const MainTabs = () => {
   return (
