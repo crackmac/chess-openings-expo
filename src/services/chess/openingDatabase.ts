@@ -130,7 +130,7 @@ export class OpeningDatabase {
   /**
    * Find which line (main or alternate) matches the current move history
    */
-  private static findMatchingLine(
+  static findMatchingLine(
     opening: Opening,
     moveHistory: Move[]
   ): { moves: Move[] } | null {
