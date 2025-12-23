@@ -3,7 +3,7 @@
  * Shows detailed information about an opening and allows starting practice
  */
 
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -25,6 +25,23 @@ export const OpeningDetailScreen: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>(
     opening.color || 'white'
   );
+
+  // Ensure back button works by setting navigation options
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ paddingLeft: 16, paddingRight: 16 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={{ fontSize: 16, color: '#2196f3', fontWeight: '600' }}>
+            Back
+          </Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   const getDifficultyColor = () => {
     switch (opening.difficulty) {
@@ -48,6 +65,8 @@ export const OpeningDetailScreen: React.FC = () => {
       if (move.color === 'white') {
         currentPair = `${moveNumber}. ${move.san}`;
         if (index === moves.length - 1 || moves[index + 1]?.color === 'white') {
+          // White move not followed by black move - add "... (any)" to indicate black can play any move
+          currentPair += ' ... (any)';
           formatted.push(currentPair);
           moveNumber++;
         }
@@ -62,7 +81,11 @@ export const OpeningDetailScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={true}
+    >
       <View style={styles.header}>
         <Text style={styles.title}>{opening.name}</Text>
         <View style={styles.meta}>

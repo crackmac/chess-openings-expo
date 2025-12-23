@@ -9,6 +9,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Pressable,
+  Text,
 } from "react-native";
 import Svg, { G } from "react-native-svg";
 import { Square } from "./Square";
@@ -150,6 +151,104 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     return touchAreas;
   };
 
+  const renderRankLabels = () => {
+    const labels = [];
+    const labelSize = 20;
+
+    for (let rank = 0; rank < 8; rank++) {
+      const displayRank = flipped ? rank : 7 - rank;
+      const rankNumber = RANKS[displayRank];
+      const y = rank * SQUARE_SIZE + SQUARE_SIZE / 2 - labelSize / 2;
+
+      labels.push(
+        <Text
+          key={`rank-${rank}`}
+          style={[
+            styles.rankLabel,
+            {
+              position: "absolute",
+              left: -labelSize - 4,
+              top: y,
+              width: labelSize,
+              height: labelSize,
+            },
+          ]}
+        >
+          {rankNumber}
+        </Text>
+      );
+
+      labels.push(
+        <Text
+          key={`rank-right-${rank}`}
+          style={[
+            styles.rankLabel,
+            {
+              position: "absolute",
+              right: -labelSize - 4,
+              top: y,
+              width: labelSize,
+              height: labelSize,
+            },
+          ]}
+        >
+          {rankNumber}
+        </Text>
+      );
+    }
+
+    return labels;
+  };
+
+  const renderFileLabels = () => {
+    const labels = [];
+    const labelSize = 20;
+
+    for (let file = 0; file < 8; file++) {
+      const displayFile = flipped ? 7 - file : file;
+      const fileLetter = FILES[displayFile].toUpperCase();
+      const x = file * SQUARE_SIZE + SQUARE_SIZE / 2 - labelSize / 2;
+
+      labels.push(
+        <Text
+          key={`file-top-${file}`}
+          style={[
+            styles.fileLabel,
+            {
+              position: "absolute",
+              left: x,
+              top: -labelSize - 4,
+              width: labelSize,
+              height: labelSize,
+            },
+          ]}
+        >
+          {fileLetter}
+        </Text>
+      );
+
+      labels.push(
+        <Text
+          key={`file-bottom-${file}`}
+          style={[
+            styles.fileLabel,
+            {
+              position: "absolute",
+              left: x,
+              bottom: -labelSize - 4,
+              width: labelSize,
+              height: labelSize,
+            },
+          ]}
+        >
+          {fileLetter}
+        </Text>
+      );
+    }
+
+    return labels;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.boardWrapper}>
@@ -158,6 +257,10 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
           {renderPieces()}
         </Svg>
         <View style={styles.touchOverlay}>{renderTouchOverlay()}</View>
+        <View style={styles.labelsContainer}>
+          {renderRankLabels()}
+          {renderFileLabels()}
+        </View>
       </View>
     </View>
   );
@@ -184,5 +287,27 @@ const styles = StyleSheet.create({
   },
   touchArea: {
     backgroundColor: "transparent",
+  },
+  labelsContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: BOARD_SIZE,
+    height: BOARD_SIZE,
+    pointerEvents: "none",
+  },
+  rankLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  fileLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+    lineHeight: 20,
   },
 });

@@ -32,6 +32,7 @@ export const GameScreen: React.FC = () => {
     totalMoves,
     accuracy,
     lastMoveCorrect,
+    expectedMove,
     sessionEnded,
     showRatingPrompt,
     openingCompleted,
@@ -67,18 +68,8 @@ export const GameScreen: React.FC = () => {
   const handleSquarePress = React.useCallback((square: string) => {
     // Check turn directly from engine to avoid stale state
     const currentEngineTurn = engine.getTurn();
-    console.log('handleSquarePress called:', {
-      square,
-      currentEngineTurn,
-      currentTurn,
-      userColor,
-      sessionEnded,
-      isUserTurn,
-      canSelect: currentEngineTurn === userColor && !sessionEnded,
-    });
 
     if (currentEngineTurn !== userColor || sessionEnded) {
-      console.log('Square press blocked - not user turn or session ended');
       return;
     }
 
@@ -93,15 +84,11 @@ export const GameScreen: React.FC = () => {
     } else {
       // Select square
       const piece = engine.getPiece(square);
-      console.log('Checking piece:', { square, piece, pieceColor: piece?.color, userColor });
       if (piece && piece.color === userColor) {
-        console.log('Selecting square:', square);
         selectSquare(square);
-      } else {
-        console.log('Cannot select - no piece or wrong color');
       }
     }
-  }, [engine, userColor, sessionEnded, selectedSquare, makeUserMove, selectSquare, isUserTurn, currentTurn]);
+  }, [engine, userColor, sessionEnded, selectedSquare, makeUserMove, selectSquare]);
 
   return (
     <Pressable
@@ -157,6 +144,11 @@ export const GameScreen: React.FC = () => {
           <Text style={styles.feedbackText}>
             {lastMoveCorrect ? '✓ Correct Move!' : '✗ Not in Opening Theory'}
           </Text>
+          {!lastMoveCorrect && expectedMove && (
+            <Text style={styles.expectedMoveText}>
+              Expected: {expectedMove.san}
+            </Text>
+          )}
         </View>
       )}
 
@@ -308,6 +300,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
+  },
+  expectedMoveText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#d32f2f',
+    marginTop: 6,
+    fontFamily: 'monospace',
   },
   boardContainer: {
     alignItems: 'center',

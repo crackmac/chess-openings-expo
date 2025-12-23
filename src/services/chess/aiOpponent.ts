@@ -52,20 +52,8 @@ export class AIOpponent {
     if (theoryMove) {
       // Verify the move is still valid
       if (this.engine.isMoveValid(theoryMove.from, theoryMove.to)) {
-        console.log("AI making theory move:", {
-          move: theoryMove.san,
-          moveHistoryLength: this.moveHistory.length,
-          turn: this.engine.getTurn(),
-        });
         return theoryMove;
-      } else {
-        console.log("Theory move invalid:", theoryMove.san);
       }
-    } else {
-      console.log("No theory move found:", {
-        moveHistoryLength: this.moveHistory.length,
-        turn: this.engine.getTurn(),
-      });
     }
 
     // If no theory move or theory exhausted, make a reasonable move

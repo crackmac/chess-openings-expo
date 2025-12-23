@@ -24,6 +24,7 @@ interface UseOpeningPracticeReturn {
   totalMoves: number;
   accuracy: number;
   lastMoveCorrect: boolean | null;
+  expectedMove: Move | null;
   sessionEnded: boolean;
   showRatingPrompt: boolean;
   openingCompleted: boolean;
@@ -48,6 +49,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
   const [correctMoves, setCorrectMoves] = useState(0);
   const [totalMoves, setTotalMoves] = useState(0);
   const [lastMoveCorrect, setLastMoveCorrect] = useState<boolean | null>(null);
+  const [expectedMove, setExpectedMove] = useState<Move | null>(null);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [showRatingPrompt, setShowRatingPrompt] = useState(false);
   const [hasMadeMistake, setHasMadeMistake] = useState(false);
@@ -67,18 +69,6 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       setAIOpponent(ai);
     }
   }, [engine, openingDatabase]);
-
-  // Debug: Log when currentTurn changes
-  useEffect(() => {
-    console.log(
-      "currentTurn changed:",
-      currentTurn,
-      "userColor:",
-      userColor,
-      "isUserTurn:",
-      currentTurn === userColor && !sessionEnded
-    );
-  }, [currentTurn, userColor, sessionEnded]);
 
   const setOpening = useCallback(
     (newOpening: Opening, color: "white" | "black") => {
@@ -171,18 +161,8 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
     (from: string, to: string): boolean => {
       // Check current turn from engine directly to avoid stale closure
       const currentEngineTurn = engine.getTurn();
-      console.log("User move attempt:", {
-        from,
-        to,
-        currentTurn,
-        currentEngineTurn,
-        userColor,
-        sessionEnded,
-        canMove: currentEngineTurn === userColor && !sessionEnded,
-      });
 
       if (currentEngineTurn !== userColor || sessionEnded) {
-        console.log("Move blocked - not user turn or session ended");
         return false;
       }
 
@@ -206,22 +186,24 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
         const isCompleted =
           checkOpeningCompletionWithHistory(updatedMoveHistory);
 
-        console.log("Completion check after user move:", {
-          moveHistoryLength: moveHistory.length,
-          updatedMoveHistoryLength: updatedMoveHistory.length,
-          mainLineLength: opening?.mainLine.length,
-          isCompleted,
-        });
-
         if (isCompleted) {
           // Opening completed successfully - mark as completed and end session
-          console.log("Opening completed! Ending session.");
           setOpeningCompleted(true);
           endSession(true);
           return true; // Return early, don't continue with AI move if opening is completed
         }
       } else {
-        // User made a mistake - mark it and end session with rating prompt
+        // User made a mistake - get the expected move and show it
+        let expected: Move | null = null;
+        if (opening && aiOpponent) {
+          // Get the expected move for the current position
+          expected = OpeningDatabase.getExpectedMove(
+            opening,
+            moveHistory,
+            userColor
+          );
+        }
+        setExpectedMove(expected);
         setHasMadeMistake(true);
         setTimeout(() => {
           endSession(true); // Show rating prompt
@@ -240,22 +222,14 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       setTimeout(() => {
         // Don't proceed if session already ended (e.g., opening completed)
         if (sessionEnded) {
-          console.log("AI move skipped - session already ended");
           return;
         }
 
         // Check current turn from engine directly to avoid stale closure
         const currentEngineTurn = engine.getTurn();
-        console.log("AI move check:", {
-          currentEngineTurn,
-          userColor,
-          sessionEnded,
-          shouldMakeMove: currentEngineTurn !== userColor && !sessionEnded,
-        });
 
         if (aiOpponent && currentEngineTurn !== userColor && !sessionEnded) {
           const aiMove = aiOpponent.getMove();
-          console.log("AI move calculated:", aiMove);
           if (aiMove) {
             // Execute the move on the engine
             const executedMove = makeMove(
@@ -263,17 +237,9 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
               aiMove.to,
               aiMove.promotion
             );
-            console.log("AI move executed:", executedMove);
             if (executedMove && aiOpponent) {
               // Record the executed move in AI's history
               aiOpponent.recordUserMove(executedMove);
-              const newTurn = engine.getTurn();
-              console.log(
-                "Turn after AI move:",
-                newTurn,
-                "Expected user turn:",
-                userColor
-              );
               // currentTurn state will be updated by makeMove in useChessGame,
               // which will trigger a re-render and update isUserTurn
 
@@ -284,16 +250,8 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
               const isCompleted =
                 checkOpeningCompletionWithHistory(updatedMoveHistory);
 
-              console.log("Completion check after AI move:", {
-                moveHistoryLength: moveHistory.length,
-                updatedMoveHistoryLength: updatedMoveHistory.length,
-                mainLineLength: opening?.mainLine.length,
-                isCompleted,
-              });
-
               if (isCompleted) {
                 // Opening completed successfully - mark as completed and show rating prompt
-                console.log("Opening completed! Ending session.");
                 setOpeningCompleted(true);
                 endSession(true);
               }
@@ -314,11 +272,6 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
               moveHistory,
               aiColor
             );
-
-            console.log("AI can't make move - checking theory:", {
-              userExpectedMove: userExpectedMove !== null,
-              aiExpectedMove: aiExpectedMove !== null,
-            });
 
             // Only end if neither player has an expected move
             if (!userExpectedMove && !aiExpectedMove) {
@@ -357,12 +310,6 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       // Save progress
       if (opening && totalMoves > 0) {
         try {
-          console.log("Saving progress:", {
-            openingId: opening.id,
-            accuracy: currentAccuracy,
-            correctMoves,
-            totalMoves,
-          });
           await updateProgress(
             opening.id,
             currentAccuracy,
@@ -440,6 +387,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
     setCorrectMoves(0);
     setTotalMoves(0);
     setLastMoveCorrect(null);
+    setExpectedMove(null);
     setSelectedSquare(null);
     setSessionEnded(false);
     setShowRatingPrompt(false);
@@ -490,6 +438,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
     totalMoves,
     accuracy,
     lastMoveCorrect,
+    expectedMove,
     sessionEnded,
     showRatingPrompt,
     openingCompleted,

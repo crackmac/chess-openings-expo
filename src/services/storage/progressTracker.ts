@@ -38,11 +38,6 @@ export class ProgressTracker {
         PROGRESS_STORAGE_KEY,
         JSON.stringify(allProgress)
       );
-      console.log('Progress saved successfully:', openingId, {
-        timesPracticed: progress.timesPracticed,
-        bestAccuracy: progress.bestAccuracy,
-        averageAccuracy: progress.averageAccuracy,
-      });
     } catch (error) {
       console.error('Error saving opening progress:', error);
       throw error;
@@ -167,12 +162,6 @@ export class ProgressTracker {
     totalMoves: number
   ): Promise<void> {
     try {
-      console.log('updateSessionProgress called:', {
-        openingId,
-        accuracy,
-        correctMoves,
-        totalMoves,
-      });
       const progress = await this.getOpeningProgress(openingId);
       const now = new Date();
 
@@ -214,10 +203,6 @@ export class ProgressTracker {
         ),
       };
 
-      console.log('Updating existing progress:', {
-        old: progress,
-        new: updatedProgress,
-      });
       await this.saveOpeningProgress(openingId, updatedProgress);
     } catch (error) {
       console.error('Error updating session progress:', error);

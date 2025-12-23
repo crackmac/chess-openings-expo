@@ -22,13 +22,21 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ProgressScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { progress, loading, getUserStats, refreshProgress } = useProgress();
+  const {
+    progress,
+    sessionHistory,
+    loading,
+    getUserStats,
+    refreshProgress,
+    refreshSessionHistory,
+  } = useProgress();
 
-  // Refresh progress when screen comes into focus
+  // Refresh progress and session history when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       refreshProgress();
-    }, [refreshProgress])
+      refreshSessionHistory();
+    }, [refreshProgress, refreshSessionHistory])
   );
 
   const userStats = getUserStats();
@@ -95,6 +103,50 @@ export const ProgressScreen: React.FC = () => {
 
   const handleOpeningPress = (opening: Opening) => {
     navigation.navigate('OpeningDetail', { opening });
+  };
+
+  // Get opening name by ID
+  const getOpeningName = (openingId: string): string => {
+    const opening = allOpenings.find((o) => o.id === openingId);
+    return opening?.name || openingId;
+  };
+
+  // Format date for display
+  const formatDate = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+
+    // For older dates, show actual date
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  };
+
+  // Format duration
+  const formatDuration = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (secs === 0) return `${mins}m`;
+    return `${mins}m ${secs}s`;
+  };
+
+  // Get accuracy color
+  const getAccuracyColor = (accuracy: number): string => {
+    if (accuracy >= 80) return '#4caf50';
+    if (accuracy >= 60) return '#ff9800';
+    return '#f44336';
   };
 
   if (loading) {
@@ -215,6 +267,63 @@ export const ProgressScreen: React.FC = () => {
               )}
             </TouchableOpacity>
           ))
+        )}
+      </View>
+
+      {/* Session History */}
+      <View style={styles.progressCard}>
+        <Text style={styles.sectionTitle}>Recent Sessions</Text>
+        {sessionHistory.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No practice sessions yet</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Complete a practice session to see your history here
+            </Text>
+          </View>
+        ) : (
+          sessionHistory.slice(0, 10).map((session) => (
+            <View key={session.sessionId} style={styles.sessionItem}>
+              <View style={styles.sessionHeader}>
+                <View style={styles.sessionInfo}>
+                  <Text style={styles.sessionOpeningName}>
+                    {getOpeningName(session.openingId)}
+                  </Text>
+                  <Text style={styles.sessionDate}>
+                    {formatDate(session.date)}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.accuracyBadge,
+                    { backgroundColor: getAccuracyColor(session.accuracy) },
+                  ]}
+                >
+                  <Text style={styles.accuracyText}>
+                    {session.accuracy.toFixed(0)}%
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.sessionDetails}>
+                <View style={styles.sessionDetailRow}>
+                  <Text style={styles.sessionDetailLabel}>Moves:</Text>
+                  <Text style={styles.sessionDetailValue}>
+                    {session.correctMoves}/{session.totalMoves}
+                  </Text>
+                </View>
+                <View style={styles.sessionDetailRow}>
+                  <Text style={styles.sessionDetailLabel}>Duration:</Text>
+                  <Text style={styles.sessionDetailValue}>
+                    {formatDuration(session.duration)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))
+        )}
+        {sessionHistory.length > 10 && (
+          <Text style={styles.moreSessionsText}>
+            Showing 10 most recent sessions
+          </Text>
         )}
       </View>
       </ScrollView>
@@ -391,6 +500,68 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: 14,
     color: '#999',
+  },
+  sessionItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    paddingVertical: 16,
+  },
+  sessionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  sessionInfo: {
+    flex: 1,
+  },
+  sessionOpeningName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  sessionDate: {
+    fontSize: 12,
+    color: '#666',
+  },
+  accuracyBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  accuracyText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  sessionDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  sessionDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sessionDetailLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginRight: 4,
+  },
+  sessionDetailValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
+  moreSessionsText: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });
 

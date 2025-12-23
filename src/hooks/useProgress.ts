@@ -8,6 +8,7 @@ import { OpeningProgress, SessionStats, UserStats } from '../types';
 
 interface UseProgressReturn {
   progress: Record<string, OpeningProgress>;
+  sessionHistory: SessionStats[];
   loading: boolean;
   getOpeningProgress: (openingId: string) => OpeningProgress | null;
   updateProgress: (
@@ -23,15 +24,18 @@ interface UseProgressReturn {
   saveSessionStats: (stats: SessionStats) => Promise<void>;
   getUserStats: () => UserStats;
   refreshProgress: () => Promise<void>;
+  refreshSessionHistory: () => Promise<void>;
 }
 
 export const useProgress = (): UseProgressReturn => {
   const [progress, setProgress] = useState<Record<string, OpeningProgress>>({});
+  const [sessionHistory, setSessionHistory] = useState<SessionStats[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load progress on mount
+  // Load progress and session history on mount
   useEffect(() => {
     loadProgress();
+    loadSessionHistory();
   }, []);
 
   const loadProgress = useCallback(async () => {
@@ -43,6 +47,17 @@ export const useProgress = (): UseProgressReturn => {
       console.error('Error loading progress:', error);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const loadSessionHistory = useCallback(async () => {
+    try {
+      const history = await ProgressTracker.getSessionHistory();
+      // Sort by date, most recent first
+      const sorted = history.sort((a, b) => b.date.getTime() - a.date.getTime());
+      setSessionHistory(sorted);
+    } catch (error) {
+      console.error('Error loading session history:', error);
     }
   }, []);
 
@@ -89,13 +104,18 @@ export const useProgress = (): UseProgressReturn => {
     [loadProgress]
   );
 
-  const saveSessionStats = useCallback(async (stats: SessionStats) => {
-    try {
-      await ProgressTracker.saveSessionStats(stats);
-    } catch (error) {
-      console.error('Error saving session stats:', error);
-    }
-  }, []);
+  const saveSessionStats = useCallback(
+    async (stats: SessionStats) => {
+      try {
+        await ProgressTracker.saveSessionStats(stats);
+        // Refresh session history after saving
+        await loadSessionHistory();
+      } catch (error) {
+        console.error('Error saving session stats:', error);
+      }
+    },
+    [loadSessionHistory]
+  );
 
   const getUserStats = useCallback((): UserStats => {
     const openings = Object.values(progress);
@@ -129,8 +149,13 @@ export const useProgress = (): UseProgressReturn => {
     await loadProgress();
   }, [loadProgress]);
 
+  const refreshSessionHistory = useCallback(async () => {
+    await loadSessionHistory();
+  }, [loadSessionHistory]);
+
   return {
     progress,
+    sessionHistory,
     loading,
     getOpeningProgress,
     updateProgress,
@@ -138,6 +163,7 @@ export const useProgress = (): UseProgressReturn => {
     saveSessionStats,
     getUserStats,
     refreshProgress,
+    refreshSessionHistory,
   };
 };
 
