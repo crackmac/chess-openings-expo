@@ -156,7 +156,11 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     const labelSize = 20;
 
     for (let rank = 0; rank < 8; rank++) {
-      const displayRank = flipped ? rank : 7 - rank;
+      // Rank labels should show from the player's perspective
+      // RANKS array is ["8", "7", "6", "5", "4", "3", "2", "1"]
+      // When NOT flipped (White): top (rank 0) → "8", bottom (rank 7) → "1"
+      // When flipped (Black): top (rank 0) → "1", bottom (rank 7) → "8"
+      const displayRank = flipped ? 7 - rank : rank;
       const rankNumber = RANKS[displayRank];
       const y = rank * SQUARE_SIZE + SQUARE_SIZE / 2 - labelSize / 2;
 

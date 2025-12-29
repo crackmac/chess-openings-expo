@@ -389,7 +389,14 @@ cd android
 ./gradlew clean
 ```
 
-## 📚 Key Files Reference
+## 📚 Documentation
+
+- **README.md** (this file): Getting started, features, and developer onboarding
+- **CLAUDE.md**: Claude Code integration guide and development patterns
+- **docs/PRD.md**: Product Requirements Document with full specifications
+- **docs/ARCHITECTURE.md**: Architecture evaluation and design patterns
+
+### Key Files Reference
 
 - **Entry Point**: `index.ts` → `App.tsx`
 - **Navigation**: `src/navigation/AppNavigator.tsx`
