@@ -16,6 +16,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "crackmac@mac.com",
+        "ascAppId": "6757377926",
+        "appleTeamId": "Q4Z44RNS54"
+      }
+    }
   }
 }

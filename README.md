@@ -29,12 +29,19 @@ This app helps chess players of all levels learn and memorize chess openings thr
 - ✅ Session statistics tracking
 - ✅ Smart move notation showing "... (any)" for system openings where black's moves are flexible
 
+### Gamification Features
+- ✅ XP and leveling system with progress tracking
+- ✅ Achievement system with 15+ unlockable achievements
+- ✅ Daily streak tracking with visual indicators
+- ✅ Opening roulette with weighted random selection (favors lower mastery)
+- ✅ Session XP rewards based on accuracy and difficulty
+- ✅ Level-up celebrations and achievement notifications
+
 ### Planned Features
-- Opening roulette with weighted random selection
-- Gamification (points, streaks, achievements)
 - Cloud sync and cross-device progress
 - Custom opening sets
 - Opening explanations and theory notes
+- Social features and leaderboards
 
 ## 🛠️ Tech Stack
 
@@ -47,11 +54,18 @@ This app helps chess players of all levels learn and memorize chess openings thr
 
 ### Key Dependencies
 - `expo` ~54.0.30
+- `expo-dev-client` ~6.0.20
 - `react-native` 0.81.5
 - `chess.js` ^1.4.0
 - `@react-navigation/native` ^7.1.26
 - `@react-native-async-storage/async-storage` 2.2.0
 - `react-native-svg` 15.12.1
+
+### Build & Deployment
+- **EAS Build**: Cloud-based iOS/Android builds
+- **EAS Submit**: Automated App Store submission
+- **Xcode Integration**: Native iOS project generation via `expo prebuild`
+- **Bundle ID**: `com.crackmac.chessopenings`
 
 ## 🚀 Getting Started
 
@@ -95,8 +109,48 @@ This app helps chess players of all levels learn and memorize chess openings thr
    ```bash
    npm run ios      # iOS Simulator
    npm run android  # Android Emulator
-   npm run web      # Web browser
+   npm run web      # Web browser (limited support)
    ```
+
+### Building for Production
+
+This project uses **EAS Build** for production iOS and Android builds.
+
+1. **Install EAS CLI**
+   ```bash
+   npm install -g eas-cli
+   ```
+
+2. **Login to Expo**
+   ```bash
+   eas login
+   ```
+
+3. **Build for iOS**
+   ```bash
+   eas build --platform ios --profile production
+   ```
+
+4. **Submit to App Store**
+   ```bash
+   eas submit --platform ios --profile production
+   ```
+
+For detailed build and submission instructions, see **[docs/APP_STORE.md](docs/APP_STORE.md)**.
+
+### Xcode Integration
+
+To open the project in Xcode (for debugging or local builds):
+
+```bash
+# Generate native iOS project
+npx expo prebuild --platform ios
+
+# Open in Xcode
+open ios/chessopenings.xcworkspace
+```
+
+**Note**: The `ios/` directory is generated and excluded from git. Use `expo prebuild` to regenerate when needed.
 
 ### First Run Checklist
 
@@ -120,37 +174,51 @@ chess-openings/
 │   ├── components/          # Reusable UI components
 │   │   ├── ChessBoard/      # Chess board with piece rendering
 │   │   ├── DifficultyRating/# Rating modal component
-│   │   └── OpeningCard/     # Opening card display
+│   │   ├── OpeningCard/     # Opening card display
+│   │   ├── AchievementCard/ # Achievement display component
+│   │   └── XPProgressBar/   # XP and level progress bar
 │   ├── screens/              # Screen components
 │   │   ├── GameScreen.tsx   # Main gameplay screen
-│   │   ├── OpeningBrowserScreen.tsx
+│   │   ├── OpeningBrowserScreen.tsx # Browse/search openings + roulette
 │   │   ├── OpeningDetailScreen.tsx
-│   │   └── ProgressScreen.tsx
+│   │   └── ProgressScreen.tsx # Stats, XP, streaks, achievements
 │   ├── hooks/                # Custom React hooks
 │   │   ├── useChessGame.ts  # Chess game state management
 │   │   ├── useOpeningPractice.ts # Opening practice logic
-│   │   └── useProgress.ts   # Progress tracking
+│   │   ├── useProgress.ts   # Progress tracking
+│   │   └── useGamification.ts # XP, achievements, streaks
 │   ├── services/             # Business logic
 │   │   ├── chess/           # Chess-related services
 │   │   │   ├── chessEngine.ts
 │   │   │   ├── aiOpponent.ts
 │   │   │   └── openingDatabase.ts
-│   │   └── storage/         # Storage services
-│   │       └── progressTracker.ts
+│   │   ├── storage/         # Storage services
+│   │   │   └── progressTracker.ts
+│   │   └── gamification/    # Gamification services
+│   │       ├── gamificationTracker.ts # XP, achievements logic
+│   │       └── openingRoulette.ts # Weighted random selection
 │   ├── types/                # TypeScript definitions
 │   │   ├── chess.ts
 │   │   ├── opening.ts
-│   │   └── progress.ts
+│   │   ├── progress.ts
+│   │   └── gamification.ts
 │   ├── data/                 # Static data
-│   │   └── openings/        # Opening definitions
-│   │       ├── beginner.ts
-│   │       ├── intermediate.ts
-│   │       └── advanced.ts
+│   │   ├── openings/        # Opening definitions
+│   │   │   ├── beginner.ts
+│   │   │   ├── intermediate.ts
+│   │   │   └── advanced.ts
+│   │   └── achievements.ts  # Achievement definitions
 │   └── navigation/          # Navigation setup
 │       └── AppNavigator.tsx
+├── docs/                     # Documentation
+│   ├── PRD.md               # Product requirements
+│   ├── ARCHITECTURE.md      # Architecture overview
+│   └── APP_STORE.md         # Build & submission guide
 ├── assets/                   # Images, icons
 ├── App.tsx                   # Root component
 ├── index.ts                  # Entry point
+├── app.json                  # Expo configuration
+├── eas.json                  # EAS Build configuration
 ├── package.json
 ├── tsconfig.json
 └── metro.config.js
@@ -233,13 +301,19 @@ chess-openings/
 
 **5. Game Hooks**
 - `useChessGame`: Manages chess game state (moves, turn, board position)
-- `useOpeningPractice`: Orchestrates opening practice session (validation, AI moves, completion)
+- `useOpeningPractice`: Orchestrates opening practice session (validation, AI moves, completion, XP rewards)
 - `useProgress`: Handles progress tracking and persistence
+- `useGamification`: Manages XP, levels, achievements, and streaks
 
 **6. Progress Tracking (`src/services/storage/progressTracker.ts`)**
 - Uses AsyncStorage for local persistence
 - Tracks per-opening statistics (accuracy, mastery, ratings)
 - Stores session history
+
+**7. Gamification System (`src/services/gamification/`)**
+- `gamificationTracker.ts`: XP calculation, level progression, achievement checking
+- `openingRoulette.ts`: Weighted random opening selection based on mastery
+- Achievement system with progressive tiers and unlocking logic
 
 #### Data Flow
 
@@ -253,10 +327,13 @@ User Action → GameScreen → useOpeningPractice → ChessEngine
 
 ### Recent Improvements
 
-- **Board Labels**: Added rank numbers (1-8) and file letters (a-h) to chess board for better square identification
-- **Move Notation**: Enhanced opening detail display to show "... (any)" for system openings where black's moves are flexible
-- **Navigation Fixes**: Improved back button reliability on opening detail screens
-- **UI Polish**: Better visual feedback and consistent styling across screens
+- **Gamification System**: Complete XP/leveling system with 15+ achievements and daily streak tracking
+- **Opening Roulette**: Weighted random opening selection that favors lower-mastery openings
+- **XP Rewards**: Session-based XP calculation considering accuracy, completion, and difficulty
+- **Achievement Tracking**: Progressive achievements from "First Steps" to "Chess Grandmaster"
+- **Board Labels**: Rank numbers (1-8) and file letters (a-h) for better square identification
+- **EAS Build Integration**: Cloud-based iOS/Android builds with automated submission
+- **Xcode Support**: Native project generation for direct Xcode access and debugging
 
 ### Step 4: Development Workflow
 
@@ -395,6 +472,7 @@ cd android
 - **CLAUDE.md**: Claude Code integration guide and development patterns
 - **docs/PRD.md**: Product Requirements Document with full specifications
 - **docs/ARCHITECTURE.md**: Architecture evaluation and design patterns
+- **docs/APP_STORE.md**: iOS build and App Store submission guide
 
 ### Key Files Reference
 
@@ -403,7 +481,9 @@ cd android
 - **Chess Logic**: `src/services/chess/chessEngine.ts`
 - **Opening Data**: `src/data/openings/`
 - **Progress Storage**: `src/services/storage/progressTracker.ts`
+- **Gamification**: `src/services/gamification/gamificationTracker.ts`
 - **Main Game Hook**: `src/hooks/useOpeningPractice.ts`
+- **Build Config**: `app.json`, `eas.json`
 
 ## 🤝 Contributing
 
