@@ -14,9 +14,12 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useProgress } from '../hooks/useProgress';
+import { useGamification } from '../hooks/useGamification';
 import { allOpenings } from '../data/openings';
 import { Opening } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { XPProgressBar } from '../components/XPProgressBar';
+import { AchievementCard } from '../components/AchievementCard';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -31,15 +34,23 @@ export const ProgressScreen: React.FC = () => {
     refreshSessionHistory,
   } = useProgress();
 
+  const {
+    gamificationData,
+    getUnlockedAchievements,
+    refreshGamification,
+  } = useGamification();
+
   // Refresh progress and session history when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       refreshProgress();
       refreshSessionHistory();
-    }, [refreshProgress, refreshSessionHistory])
+      refreshGamification();
+    }, [refreshProgress, refreshSessionHistory, refreshGamification])
   );
 
   const userStats = getUserStats();
+  const unlockedAchievements = getUnlockedAchievements();
 
   // Get openings with progress
   const openingsWithProgress = useMemo(() => {
@@ -169,6 +180,17 @@ export const ProgressScreen: React.FC = () => {
       </View>
       <ScrollView contentContainerStyle={styles.content}>
 
+      {/* XP/Level Card */}
+      {gamificationData && (
+        <View style={styles.xpCard}>
+          <XPProgressBar
+            level={gamificationData.level}
+            currentXP={gamificationData.totalXP}
+            xpForNextLevel={gamificationData.xpForNextLevel}
+          />
+        </View>
+      )}
+
       {/* Overall Statistics */}
       <View style={styles.statsCard}>
         <Text style={styles.sectionTitle}>Overall Statistics</Text>
@@ -188,11 +210,36 @@ export const ProgressScreen: React.FC = () => {
             <Text style={styles.statLabel}>Avg Accuracy</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{userStats.currentStreak}</Text>
+            <View style={styles.streakContainer}>
+              <Text style={styles.streakIcon}>🔥</Text>
+              <Text style={styles.statValue}>
+                {gamificationData?.currentStreak || userStats.currentStreak}
+              </Text>
+            </View>
             <Text style={styles.statLabel}>Day Streak</Text>
           </View>
         </View>
       </View>
+
+      {/* Recent Achievements */}
+      {gamificationData && unlockedAchievements.length > 0 && (
+        <View style={styles.achievementsCard}>
+          <Text style={styles.sectionTitle}>Recent Achievements</Text>
+          {unlockedAchievements.slice(0, 3).map((achievement) => (
+            <AchievementCard
+              key={achievement.id}
+              achievement={achievement}
+              unlocked={true}
+              compact={true}
+            />
+          ))}
+          {unlockedAchievements.length > 3 && (
+            <Text style={styles.viewMoreText}>
+              +{unlockedAchievements.length - 3} more achievements unlocked
+            </Text>
+          )}
+        </View>
+      )}
 
       {/* Opening Progress List */}
       <View style={styles.progressCard}>
@@ -364,7 +411,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  xpCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   statsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  achievementsCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
@@ -404,6 +473,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streakIcon: {
+    fontSize: 20,
+    marginRight: 4,
+  },
+  viewMoreText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
   progressCard: {
     backgroundColor: '#fff',

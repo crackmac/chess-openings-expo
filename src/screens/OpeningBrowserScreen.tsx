@@ -3,7 +3,7 @@
  * Browse and search chess openings by difficulty
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,6 +20,7 @@ import { allOpenings } from '../data/openings';
 import { Opening } from '../types';
 import { useProgress } from '../hooks/useProgress';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { OpeningRoulette } from '../services/gamification/openingRoulette';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -27,7 +28,7 @@ type DifficultyFilter = 'all' | 'beginner' | 'intermediate' | 'advanced';
 
 export const OpeningBrowserScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { getOpeningProgress } = useProgress();
+  const { getOpeningProgress, progress } = useProgress();
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>('all');
@@ -56,6 +57,24 @@ export const OpeningBrowserScreen: React.FC = () => {
   const handleOpeningPress = (opening: Opening) => {
     navigation.navigate('OpeningDetail', { opening });
   };
+
+  const handleRoulettePress = useCallback(() => {
+    if (filteredOpenings.length === 0) {
+      return;
+    }
+
+    const roulette = new OpeningRoulette();
+    const selectedOpening = roulette.selectOpening(filteredOpenings, progress);
+
+    // Randomly assign user color (50/50 chance)
+    const userColor = Math.random() < 0.5 ? 'white' : 'black';
+
+    // Navigate directly to game
+    navigation.navigate('Game', {
+      opening: selectedOpening,
+      userColor,
+    });
+  }, [filteredOpenings, progress, navigation]);
 
   return (
     <View style={styles.container}>
@@ -145,6 +164,16 @@ export const OpeningBrowserScreen: React.FC = () => {
         </ScrollView>
       </View>
 
+      {/* Random Opening Button */}
+      <TouchableOpacity
+        style={styles.rouletteButton}
+        onPress={handleRoulettePress}
+        disabled={filteredOpenings.length === 0}
+      >
+        <Text style={styles.rouletteIcon}>🎲</Text>
+        <Text style={styles.rouletteText}>Random Opening</Text>
+      </TouchableOpacity>
+
       <ScrollView
         style={styles.openingsList}
         contentContainerStyle={styles.openingsListContent}
@@ -230,6 +259,30 @@ const styles = StyleSheet.create({
   },
   filterButtonTextActive: {
     color: '#fff',
+  },
+  rouletteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  rouletteIcon: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  rouletteText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
   },
   openingsList: {
     flex: 1,

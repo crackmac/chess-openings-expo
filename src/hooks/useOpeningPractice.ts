@@ -9,6 +9,8 @@ import { OpeningDatabase } from "../services/chess/openingDatabase";
 import { Opening, Move } from "../types";
 import { useChessGame } from "./useChessGame";
 import { useProgress } from "./useProgress";
+import { GamificationTracker } from "../services/gamification/gamificationTracker";
+import { ProgressTracker } from "../services/storage/progressTracker";
 
 interface UseOpeningPracticeReturn {
   opening: Opening | null;
@@ -319,7 +321,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
 
           // Save session stats
           const duration = Math.floor((Date.now() - sessionStartTime) / 1000);
-          await saveSessionStats({
+          const sessionStats = {
             sessionId: `${opening.id}-${Date.now()}`,
             openingId: opening.id,
             date: new Date(),
@@ -327,7 +329,58 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
             totalMoves,
             correctMoves,
             duration,
-          });
+          };
+          await saveSessionStats(sessionStats);
+
+          // Award XP for session
+          try {
+            const currentProgress = await ProgressTracker.getOpeningProgress(opening.id);
+            if (currentProgress) {
+              const sessionXP = GamificationTracker.calculateSessionXP(
+                sessionStats,
+                currentProgress,
+                opening
+              );
+
+              const xpResult = await GamificationTracker.awardXP({
+                type: 'session_complete',
+                xp: sessionXP,
+                timestamp: new Date(),
+                metadata: {
+                  openingId: opening.id,
+                  accuracy: currentAccuracy,
+                  completed: openingCompleted,
+                },
+              });
+
+              // Update streak
+              const streakResult = await GamificationTracker.updateStreak(new Date());
+
+              // Check for new achievements
+              const allProgress = await ProgressTracker.getAllProgress();
+              const allSessionHistory = await ProgressTracker.getSessionHistory();
+              const gamificationData = await GamificationTracker.load();
+              const newAchievements = await GamificationTracker.checkAchievements(
+                gamificationData,
+                allProgress,
+                allSessionHistory
+              );
+
+              // Log results for visibility
+              console.log('Session XP awarded:', sessionXP);
+              if (xpResult.leveledUp) {
+                console.log('🎉 Level up! New level:', xpResult.newLevel);
+              }
+              if (streakResult.streakContinued) {
+                console.log('🔥 Streak continued! Current:', streakResult.currentStreak);
+              }
+              if (newAchievements.length > 0) {
+                console.log('🏆 Achievements unlocked:', newAchievements.map(a => a.name).join(', '));
+              }
+            }
+          } catch (error) {
+            console.error('Error processing gamification:', error);
+          }
         } catch (error) {
           console.error("Error saving session progress:", error);
         }
