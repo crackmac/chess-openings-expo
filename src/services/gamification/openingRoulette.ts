@@ -92,6 +92,52 @@ export class OpeningRoulette {
   }
 
   /**
+   * Select multiple openings using weighted random selection without replacement
+   * Useful for displaying a "top N" list with intelligent prioritization
+   *
+   * @param count - Number of openings to select
+   * @param openings - Array of available openings
+   * @param progressData - Progress data keyed by opening ID
+   * @returns Array of selected openings (length may be less than count if fewer openings available)
+   */
+  selectTopOpenings(
+    count: number,
+    openings: Opening[],
+    progressData: Record<string, OpeningProgress>
+  ): Opening[] {
+    if (openings.length === 0) {
+      return [];
+    }
+
+    // If requesting more than available, return all (still weighted shuffled)
+    const selectCount = Math.min(count, openings.length);
+
+    // Calculate weight for each opening
+    const weightedOpenings = openings.map((opening) => ({
+      opening,
+      weight: this.calculateWeight(opening, progressData[opening.id] || null),
+    }));
+
+    // Select without replacement
+    const selected: Opening[] = [];
+    const pool = [...weightedOpenings]; // Create working copy
+
+    for (let i = 0; i < selectCount; i++) {
+      // Select one from remaining pool
+      const selectedOpening = this.weightedRandomSelect(pool);
+      selected.push(selectedOpening);
+
+      // Remove selected from pool to avoid duplicates
+      const index = pool.findIndex((item) => item.opening.id === selectedOpening.id);
+      if (index !== -1) {
+        pool.splice(index, 1);
+      }
+    }
+
+    return selected;
+  }
+
+  /**
    * Get weight distribution for all openings (for debugging)
    *
    * @param openings - Array of available openings

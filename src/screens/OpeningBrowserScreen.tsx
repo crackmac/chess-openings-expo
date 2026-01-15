@@ -11,6 +11,7 @@ import {
   TextInput,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,6 +33,9 @@ export const OpeningBrowserScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [rouletteInstance] = useState(() => new OpeningRoulette());
   const [openingDatabase] = useState(() => {
     const db = new OpeningDatabase();
     db.loadOpenings(allOpenings);
@@ -54,6 +58,21 @@ export const OpeningBrowserScreen: React.FC = () => {
     return openings;
   }, [searchQuery, difficultyFilter, openingDatabase]);
 
+  // Calculate recommended openings (top 10 weighted by difficulty rating)
+  // Independent of search/filter - always shows intelligent selection from ALL openings
+  const recommendedOpenings = useMemo(() => {
+    return rouletteInstance.selectTopOpenings(10, allOpenings, progress);
+  }, [rouletteInstance, progress, refreshKey]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Force recalculation by updating refresh key
+    // This triggers useMemo to select a new random set
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setRefreshKey(prev => prev + 1);
+    setRefreshing(false);
+  }, []);
+
   const handleOpeningPress = (opening: Opening) => {
     navigation.navigate('OpeningDetail', { opening });
   };
@@ -63,8 +82,7 @@ export const OpeningBrowserScreen: React.FC = () => {
       return;
     }
 
-    const roulette = new OpeningRoulette();
-    const selectedOpening = roulette.selectOpening(filteredOpenings, progress);
+    const selectedOpening = rouletteInstance.selectOpening(filteredOpenings, progress);
 
     // Randomly assign user color (50/50 chance)
     const userColor = Math.random() < 0.5 ? 'white' : 'black';
@@ -74,7 +92,7 @@ export const OpeningBrowserScreen: React.FC = () => {
       opening: selectedOpening,
       userColor,
     });
-  }, [filteredOpenings, progress, navigation]);
+  }, [filteredOpenings, progress, navigation, rouletteInstance]);
 
   return (
     <View style={styles.container}>
@@ -177,7 +195,43 @@ export const OpeningBrowserScreen: React.FC = () => {
       <ScrollView
         style={styles.openingsList}
         contentContainerStyle={styles.openingsListContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#2196f3"
+          />
+        }
       >
+        {/* Recommended for You Section */}
+        {recommendedOpenings.length > 0 && (
+          <View style={styles.recommendedSection}>
+            <View style={styles.recommendedHeader}>
+              <Text style={styles.recommendedTitle}>✨ Recommended for You</Text>
+              <Text style={styles.recommendedSubtitle}>
+                Intelligent selection based on your progress
+              </Text>
+            </View>
+            {recommendedOpenings.map((opening) => (
+              <OpeningCard
+                key={opening.id}
+                opening={opening}
+                onPress={() => handleOpeningPress(opening)}
+                progress={getOpeningProgress(opening.id)}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* All Openings Section */}
+        <View style={styles.allOpeningsSection}>
+          <Text style={styles.sectionTitle}>
+            {searchQuery || difficultyFilter !== 'all'
+              ? 'Search Results'
+              : 'All Openings'}
+          </Text>
+        </View>
+
         {filteredOpenings.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>No openings found</Text>
@@ -304,6 +358,40 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: 14,
     color: '#999',
+  },
+  recommendedSection: {
+    marginBottom: 24,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  recommendedHeader: {
+    marginBottom: 12,
+  },
+  recommendedTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  recommendedSubtitle: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 12,
+  },
+  allOpeningsSection: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
   },
 });
 
