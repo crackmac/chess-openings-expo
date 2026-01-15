@@ -43,6 +43,7 @@ interface UseOpeningPracticeReturn {
   skipRating: () => void;
   checkOpeningCompletion: () => boolean;
   handleInteraction: () => void;
+  triggerRatingPrompt: () => void;
 }
 
 export const useOpeningPractice = (): UseOpeningPracticeReturn => {
@@ -88,6 +89,9 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       setSessionEnded(false);
       setShowRatingPrompt(false);
       setHasMadeMistake(false);
+      setOpeningCompleted(false);
+      setWaitingForInteraction(false);
+      setExpectedMove(null);
       setSessionOutcome('active');
 
       if (aiOpponent && newOpening) {
@@ -195,9 +199,10 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
 
         if (isCompleted) {
           // Opening completed successfully - mark as completed and end session
+          // Don't show rating prompt yet - wait for user to click a button
           setOpeningCompleted(true);
           setSessionOutcome('completed');
-          endSession(true);
+          endSession(false);
           return true; // Return early, don't continue with AI move if opening is completed
         }
       } else {
@@ -215,7 +220,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
         setHasMadeMistake(true);
         setSessionOutcome('failed');
         setTimeout(() => {
-          endSession(true); // Show rating prompt
+          endSession(false); // Don't show rating prompt yet - wait for button click
         }, 100);
         setLastMoveCorrect(isCorrect);
         return true; // Return early, don't continue with AI move
@@ -260,10 +265,11 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
                 checkOpeningCompletionWithHistory(updatedMoveHistory);
 
               if (isCompleted) {
-                // Opening completed successfully - mark as completed and show rating prompt
+                // Opening completed successfully - mark as completed
+                // Don't show rating prompt yet - wait for user to click a button
                 setOpeningCompleted(true);
                 setSessionOutcome('completed');
-                endSession(true);
+                endSession(false);
               }
               // Don't check theory exhaustion here - let the user make their move first
             }
@@ -396,9 +402,11 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       }
 
       // Show rating prompt only if requested (opening completed or mistake made)
-      // But wait for user interaction first
+      // Show automatically after a brief delay to let user see feedback
       if (showRating) {
-        setWaitingForInteraction(true);
+        setTimeout(() => {
+          setShowRatingPrompt(true);
+        }, 800);
       }
     },
     [
@@ -435,6 +443,10 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
   const skipRating = useCallback(() => {
     setShowRatingPrompt(false);
     setWaitingForInteraction(false);
+  }, []);
+
+  const triggerRatingPrompt = useCallback(() => {
+    setShowRatingPrompt(true);
   }, []);
 
   const handleInteraction = useCallback(() => {
@@ -516,5 +528,6 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
     skipRating,
     checkOpeningCompletion,
     handleInteraction,
+    triggerRatingPrompt,
   };
 };

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Pressable } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChessBoard } from '../components/ChessBoard';
@@ -21,10 +21,12 @@ type GameRouteProp = RouteProp<RootStackParamList, 'Game'>;
 export const GameScreen: React.FC = () => {
   const route = useRoute<GameRouteProp>();
   const navigation = useNavigation<NavigationProp>();
-  const { opening, userColor } = route.params;
+  const { opening: initialOpening, userColor: initialUserColor } = route.params;
   const { getOpeningProgress, progress } = useProgress();
 
   const {
+    opening,
+    userColor,
     engine,
     selectedSquare,
     lastMove,
@@ -37,8 +39,6 @@ export const GameScreen: React.FC = () => {
     expectedMove,
     sessionEnded,
     showRatingPrompt,
-    openingCompleted,
-    waitingForInteraction,
     sessionOutcome,
     setOpening,
     selectSquare,
@@ -48,16 +48,25 @@ export const GameScreen: React.FC = () => {
     rateOpening,
     skipRating,
     checkOpeningCompletion,
-    handleInteraction,
-    currentTurn,
+    triggerRatingPrompt,
   } = useOpeningPractice();
 
   // Initialize opening when component mounts
   React.useEffect(() => {
-    setOpening(opening, userColor);
-  }, [opening.id, userColor, setOpening]);
+    setOpening(initialOpening, initialUserColor);
+  }, [initialOpening.id, initialUserColor, setOpening]);
+
+  // Update navigation title when opening changes
+  React.useEffect(() => {
+    if (opening) {
+      navigation.setOptions({ title: opening.name });
+    }
+  }, [opening, navigation]);
 
   const currentProgress = opening ? getOpeningProgress(opening.id) : null;
+
+  // Track pending action after rating (for completion/failure flow)
+  const [pendingAction, setPendingAction] = React.useState<'next' | 'browse' | 'retry' | null>(null);
 
   const handleMove = (move: { from: string; to: string; san: string }) => {
     if (selectedSquare) {
@@ -68,11 +77,11 @@ export const GameScreen: React.FC = () => {
     }
   };
 
-  const handleSquarePress = React.useCallback((square: string) => {
+  const handleSquarePress = React.useCallback((square: string | null) => {
     // Check turn directly from engine to avoid stale state
     const currentEngineTurn = engine.getTurn();
 
-    if (currentEngineTurn !== userColor || sessionEnded) {
+    if (!square || currentEngineTurn !== userColor || sessionEnded) {
       return;
     }
 
@@ -94,16 +103,22 @@ export const GameScreen: React.FC = () => {
   }, [engine, userColor, sessionEnded, selectedSquare, makeUserMove, selectSquare]);
 
   const handleTryAgain = React.useCallback(() => {
-    resetSession();
-  }, [resetSession]);
+    // For failed sessions, show rating prompt first
+    if (sessionOutcome === 'failed') {
+      setPendingAction('retry');
+      triggerRatingPrompt();
+    } else {
+      resetSession();
+    }
+  }, [sessionOutcome, resetSession, triggerRatingPrompt]);
 
-  const handleNextOpening = React.useCallback(async () => {
+  const loadNextOpening = React.useCallback(async () => {
     const roulette = new OpeningRoulette();
 
     // Select next opening (avoid same opening)
     let nextOpening = roulette.selectOpening(allOpenings, progress);
     let attempts = 0;
-    while (nextOpening.id === opening.id && attempts < 5) {
+    while (opening && nextOpening.id === opening.id && attempts < 5) {
       nextOpening = roulette.selectOpening(allOpenings, progress);
       attempts++;
     }
@@ -113,7 +128,27 @@ export const GameScreen: React.FC = () => {
 
     // Load new opening in same session
     setOpening(nextOpening, randomUserColor);
-  }, [opening.id, setOpening, progress]);
+  }, [opening, setOpening, progress]);
+
+  const handleNextOpening = React.useCallback(() => {
+    // For completed sessions, show rating prompt first
+    if (sessionOutcome === 'completed') {
+      setPendingAction('next');
+      triggerRatingPrompt();
+    } else {
+      loadNextOpening();
+    }
+  }, [sessionOutcome, loadNextOpening, triggerRatingPrompt]);
+
+  const handleBrowseOpenings = React.useCallback(() => {
+    // For completed sessions, show rating prompt first
+    if (sessionOutcome === 'completed') {
+      setPendingAction('browse');
+      triggerRatingPrompt();
+    } else {
+      navigation.navigate('MainTabs');
+    }
+  }, [sessionOutcome, navigation, triggerRatingPrompt]);
 
   const renderActionButtons = () => {
     switch (sessionOutcome) {
@@ -125,6 +160,8 @@ export const GameScreen: React.FC = () => {
               onPress={() => {
                 const completed = checkOpeningCompletion();
                 endSession(completed);
+                // Navigate away after manually ending session
+                navigation.navigate('MainTabs');
               }}
             >
               <Text style={styles.buttonText}>End Session</Text>
@@ -143,7 +180,7 @@ export const GameScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.buttonSecondary]}
-              onPress={() => navigation.navigate('MainTabs')}
+              onPress={handleBrowseOpenings}
             >
               <Text style={styles.buttonText}>Browse Openings</Text>
             </TouchableOpacity>
@@ -161,7 +198,11 @@ export const GameScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.buttonSecondary]}
-              onPress={() => navigation.navigate('MainTabs')}
+              onPress={() => {
+                // For failed sessions, show rating prompt first
+                setPendingAction('browse');
+                triggerRatingPrompt();
+              }}
             >
               <Text style={styles.buttonText}>Choose Different</Text>
             </TouchableOpacity>
@@ -186,29 +227,22 @@ export const GameScreen: React.FC = () => {
   };
 
   return (
-    <Pressable
-      onPress={waitingForInteraction ? handleInteraction : undefined}
-      style={{ flex: 1 }}
-    >
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.subtitle}>
           Playing as {userColor === 'white' ? 'White' : 'Black'}
         </Text>
       </View>
 
-      {openingCompleted ? (
+      {sessionOutcome === 'completed' && opening && (
         <View style={styles.completionBanner}>
           <Text style={styles.completionText}>
             🎉 You know the {opening.name} opening!
           </Text>
-          {waitingForInteraction && (
-            <Text style={styles.tapToContinueText}>
-              Tap anywhere to continue...
-            </Text>
-          )}
         </View>
-      ) : (
+      )}
+
+      {sessionOutcome === 'active' && opening && (
         <View style={styles.stats}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>Accuracy</Text>
@@ -264,18 +298,42 @@ export const GameScreen: React.FC = () => {
       <DifficultyRating
         visible={showRatingPrompt}
         currentRating={currentProgress?.difficultyRating}
-        openingName={opening.name}
+        openingName={opening?.name || ''}
         onRate={async (rating) => {
           const success = await rateOpening(rating);
           if (success) {
-            // Navigate back to main screen after rating
-            navigation.navigate('MainTabs');
+            // Execute pending action after rating
+            if (pendingAction === 'next') {
+              setPendingAction(null);
+              loadNextOpening();
+            } else if (pendingAction === 'browse') {
+              setPendingAction(null);
+              navigation.navigate('MainTabs');
+            } else if (pendingAction === 'retry') {
+              setPendingAction(null);
+              resetSession();
+            } else {
+              // Default: navigate back to main screen
+              navigation.navigate('MainTabs');
+            }
           }
         }}
         onSkip={() => {
           skipRating();
-          // Navigate back to main screen after skipping
-          navigation.navigate('MainTabs');
+          // Execute pending action after skipping
+          if (pendingAction === 'next') {
+            setPendingAction(null);
+            loadNextOpening();
+          } else if (pendingAction === 'browse') {
+            setPendingAction(null);
+            navigation.navigate('MainTabs');
+          } else if (pendingAction === 'retry') {
+            setPendingAction(null);
+            resetSession();
+          } else {
+            // Default: navigate back to main screen
+            navigation.navigate('MainTabs');
+          }
         }}
       />
 
@@ -295,7 +353,6 @@ export const GameScreen: React.FC = () => {
         </View>
       )}
       </ScrollView>
-    </Pressable>
   );
 };
 
