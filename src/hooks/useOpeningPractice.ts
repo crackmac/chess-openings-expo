@@ -12,6 +12,8 @@ import { useProgress } from "./useProgress";
 import { GamificationTracker } from "../services/gamification/gamificationTracker";
 import { ProgressTracker } from "../services/storage/progressTracker";
 
+type SessionOutcome = 'active' | 'completed' | 'failed' | 'theory_exhausted';
+
 interface UseOpeningPracticeReturn {
   opening: Opening | null;
   userColor: "white" | "black";
@@ -31,6 +33,7 @@ interface UseOpeningPracticeReturn {
   showRatingPrompt: boolean;
   openingCompleted: boolean;
   waitingForInteraction: boolean;
+  sessionOutcome: SessionOutcome;
   setOpening: (opening: Opening, userColor: "white" | "black") => void;
   selectSquare: (square: string | null) => void;
   makeUserMove: (from: string, to: string) => boolean;
@@ -57,6 +60,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
   const [hasMadeMistake, setHasMadeMistake] = useState(false);
   const [openingCompleted, setOpeningCompleted] = useState(false);
   const [waitingForInteraction, setWaitingForInteraction] = useState(false);
+  const [sessionOutcome, setSessionOutcome] = useState<SessionOutcome>('active');
   const [sessionStartTime] = useState(() => Date.now());
 
   const { updateProgress, updateRating, saveSessionStats } = useProgress();
@@ -84,6 +88,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       setSessionEnded(false);
       setShowRatingPrompt(false);
       setHasMadeMistake(false);
+      setSessionOutcome('active');
 
       if (aiOpponent && newOpening) {
         aiOpponent.setOpening(newOpening);
@@ -191,6 +196,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
         if (isCompleted) {
           // Opening completed successfully - mark as completed and end session
           setOpeningCompleted(true);
+          setSessionOutcome('completed');
           endSession(true);
           return true; // Return early, don't continue with AI move if opening is completed
         }
@@ -207,6 +213,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
         }
         setExpectedMove(expected);
         setHasMadeMistake(true);
+        setSessionOutcome('failed');
         setTimeout(() => {
           endSession(true); // Show rating prompt
         }, 100);
@@ -255,6 +262,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
               if (isCompleted) {
                 // Opening completed successfully - mark as completed and show rating prompt
                 setOpeningCompleted(true);
+                setSessionOutcome('completed');
                 endSession(true);
               }
               // Don't check theory exhaustion here - let the user make their move first
@@ -277,6 +285,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
 
             // Only end if neither player has an expected move
             if (!userExpectedMove && !aiExpectedMove) {
+              setSessionOutcome('theory_exhausted');
               endSession(false);
             }
           }
@@ -447,6 +456,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
     setHasMadeMistake(false);
     setOpeningCompleted(false);
     setWaitingForInteraction(false);
+    setSessionOutcome('active');
 
     if (aiOpponent) {
       aiOpponent.reset();
@@ -496,6 +506,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
     showRatingPrompt,
     openingCompleted,
     waitingForInteraction,
+    sessionOutcome,
     setOpening,
     selectSquare,
     makeUserMove,

@@ -12,6 +12,8 @@ import { DifficultyRating } from '../components/DifficultyRating';
 import { useOpeningPractice } from '../hooks/useOpeningPractice';
 import { useProgress } from '../hooks/useProgress';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { allOpenings } from '../data/openings';
+import { OpeningRoulette } from '../services/gamification/openingRoulette';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type GameRouteProp = RouteProp<RootStackParamList, 'Game'>;
@@ -20,7 +22,7 @@ export const GameScreen: React.FC = () => {
   const route = useRoute<GameRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { opening, userColor } = route.params;
-  const { getOpeningProgress } = useProgress();
+  const { getOpeningProgress, progress } = useProgress();
 
   const {
     engine,
@@ -37,6 +39,7 @@ export const GameScreen: React.FC = () => {
     showRatingPrompt,
     openingCompleted,
     waitingForInteraction,
+    sessionOutcome,
     setOpening,
     selectSquare,
     makeUserMove,
@@ -89,6 +92,98 @@ export const GameScreen: React.FC = () => {
       }
     }
   }, [engine, userColor, sessionEnded, selectedSquare, makeUserMove, selectSquare]);
+
+  const handleTryAgain = React.useCallback(() => {
+    resetSession();
+  }, [resetSession]);
+
+  const handleNextOpening = React.useCallback(async () => {
+    const roulette = new OpeningRoulette();
+
+    // Select next opening (avoid same opening)
+    let nextOpening = roulette.selectOpening(allOpenings, progress);
+    let attempts = 0;
+    while (nextOpening.id === opening.id && attempts < 5) {
+      nextOpening = roulette.selectOpening(allOpenings, progress);
+      attempts++;
+    }
+
+    // Random color assignment
+    const randomUserColor = Math.random() < 0.5 ? 'white' : 'black';
+
+    // Load new opening in same session
+    setOpening(nextOpening, randomUserColor);
+  }, [opening.id, setOpening, progress]);
+
+  const renderActionButtons = () => {
+    switch (sessionOutcome) {
+      case 'active':
+        return (
+          <View style={styles.controls}>
+            <TouchableOpacity
+              style={[styles.button, styles.buttonSecondary]}
+              onPress={() => {
+                const completed = checkOpeningCompletion();
+                endSession(completed);
+              }}
+            >
+              <Text style={styles.buttonText}>End Session</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 'completed':
+        return (
+          <View style={styles.controls}>
+            <TouchableOpacity
+              style={[styles.button, styles.buttonPrimary]}
+              onPress={handleNextOpening}
+            >
+              <Text style={styles.buttonText}>Next Opening</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.buttonSecondary]}
+              onPress={() => navigation.navigate('MainTabs')}
+            >
+              <Text style={styles.buttonText}>Browse Openings</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 'failed':
+        return (
+          <View style={styles.controls}>
+            <TouchableOpacity
+              style={[styles.button, styles.buttonPrimary]}
+              onPress={handleTryAgain}
+            >
+              <Text style={styles.buttonText}>Try Again</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.buttonSecondary]}
+              onPress={() => navigation.navigate('MainTabs')}
+            >
+              <Text style={styles.buttonText}>Choose Different</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      case 'theory_exhausted':
+        return (
+          <View style={styles.controls}>
+            <TouchableOpacity
+              style={[styles.button, styles.buttonPrimary]}
+              onPress={() => navigation.navigate('MainTabs')}
+            >
+              <Text style={styles.buttonText}>Browse Openings</Text>
+            </TouchableOpacity>
+          </View>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <Pressable
@@ -164,29 +259,7 @@ export const GameScreen: React.FC = () => {
         />
       </View>
 
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.button} onPress={resetSession}>
-          <Text style={styles.buttonText}>Reset</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => selectSquare(null)}
-        >
-          <Text style={styles.buttonText}>Deselect</Text>
-        </TouchableOpacity>
-        {!sessionEnded && (
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => {
-              // Only show rating if opening was completed correctly
-              const completed = checkOpeningCompletion();
-              endSession(completed);
-            }}
-          >
-            <Text style={styles.buttonText}>End Session</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      {renderActionButtons()}
 
       <DifficultyRating
         visible={showRatingPrompt}
@@ -326,11 +399,16 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   button: {
-    backgroundColor: '#2196f3',
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 8,
     minWidth: 120,
+  },
+  buttonPrimary: {
+    backgroundColor: '#4caf50', // Green
+  },
+  buttonSecondary: {
+    backgroundColor: '#2196f3', // Blue
   },
   buttonText: {
     color: '#fff',
