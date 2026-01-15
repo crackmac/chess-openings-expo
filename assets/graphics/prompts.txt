@@ -1,0 +1,142 @@
+
+
+
+Create a modern, minimalist app icon for a chess learning mobile game.
+
+Visual Elements:
+- Feature: Stylized chess pieces (king and knight) in bold silhouette
+- Composition: King piece slightly forward, knight piece behind or beside
+- Style: Flat design with clean, smooth lines
+- Detail level: Simple but distinctive, recognizable at small sizes
+
+Color Scheme:
+- Background: Deep blue (#2C3E50)
+- Pieces: Gold/white gradient (#F39C12 to #FFFFFF)
+- Optional: Subtle shadow or depth effect for pieces
+
+Design Elements:
+- Include subtle upward arrow or progress indicator integrated into the design
+- Could be part of the crown on king, or negative space
+- Conveys: Growth, learning, improvement
+
+Aesthetic:
+- Professional but not intimidating
+- Educational yet playful
+- Sophisticated but accessible
+- Modern and current (2025 design trends)
+
+Technical Requirements:
+- Square format 1024x1024px with rounded corners (iOS style)
+- High contrast for visibility
+- Clean silhouettes
+- Must work on both light and dark backgrounds
+- No gradients in background (solid color preferred)
+- Pieces should have clear, recognizable chess piece shapes
+
+Avoid:
+- Photorealistic textures
+- Complex patterns
+- Small details that won't scale
+- Text or letters
+- Multiple colors (keep it 2-3 colors max)
+
+App icon: King and knight chess pieces in gold gradient on deep blue background (#2C3E50), flat design, minimalist, iOS style, 1024x1024px
+
+
+
+
+Using the same app icon imagery Create a promotional hero banner for a chess learning app.
+
+Scene:
+- Split composition: Left side shows stylized chess board mid-game, right side shows mobile phone mockup displaying the app
+- Chess pieces: Modern, clean design with gold/white pieces on deep blue board
+- Phone mockup: iPhone showing the app's practice screen with glowing valid moves
+- Background: Gradient from deep blue (#2C3E50) to lighter blue, professional and clean
+
+Visual Elements:
+- Chess board: Partially visible, diagonal angle, dynamic perspective
+- Pieces: 3-4 pieces visible (king, knight, pawns), elegant styling
+- Light rays or glow: Subtle highlighting around pieces suggesting learning/growth
+- UI on phone: Clear, modern, readable at small sizes
+
+Style:
+- Professional yet approachable
+- Educational technology aesthetic
+- Modern app marketing design
+- High quality, crisp details
+
+Colors:
+- Primary: Deep blue #2C3E50
+- Accent: Gold #F39C12
+- Highlights: White #ECF0F1
+
+Must be 2048x1536px for App Store feature graphic
+
+
+
+
+Social Media Card (1080×1080px)
+
+Create a square social media promotional image for a chess learning app.
+
+Composition:
+- Center: Large stylized chess piece (king) in gold gradient
+- Background: Deep blue (#2C3E50) with subtle pattern or gradient
+- Overlay: Semi-transparent mobile phone mockup showing the app interface
+- Border: Optional thin gold accent line
+
+Visual Elements:
+- King piece: Bold, modern silhouette, dominant focal point
+- App screenshot: Partially visible, showing chess board and UI
+- Upward arrow or progress indicator: Subtle integration
+- Badges/icons: Small XP badge, streak flame icon, achievement star
+
+Text (optional):
+- No text just leave room for a headline
+
+Style:
+- Clean, modern, professional
+- Social media optimized (eye-catching but not cluttered)
+- Square format 1080x1080px
+- High contrast for mobile viewing
+
+Colors:
+- Background: #2C3E50
+- Accent: #F39C12
+- Text: White #FFFFFF
+
+
+
+App Store Preview Banner (4320×1080px)
+
+Create a wide horizontal banner for App Store preview.
+
+Layout:
+- Left third: Large chess piece silhouette (king or knight) in gold
+- Center: Three phone mockups showing different app screens side-by-side
+- Right: Text overlay with feature highlights
+
+Phone Screens (mockups):
+1. Game screen: Chess board with highlighted moves
+2. Progress screen: Stats dashboard with XP and levels
+3. Browser screen: Opening selection with cards
+
+Background:
+- Deep blue gradient (#2C3E50) fading to darker blue
+- Subtle chess board pattern in background (very faint)
+- Professional, wide cinematic look
+
+Text Content:
+- No text just leave room for a headline
+
+Style:
+- Wide cinematic banner composition
+- App Store top banner aesthetic
+- Professional marketing design
+- 4320x1080px ultra-wide format
+- High quality, crisp details
+
+Colors:
+- Background gradient: #2C3E50 to darker
+- Accent highlights: #F39C12
+- Text: White #FFFFFF
