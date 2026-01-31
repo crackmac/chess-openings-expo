@@ -37,6 +37,25 @@ expo start -c            # Clear Expo cache
 rm -rf node_modules && npm install  # Complete dependency refresh
 ```
 
+### Build & Deployment (EAS)
+```bash
+npm install -g eas-cli          # Install EAS CLI globally
+eas login                        # Login to Expo account
+eas build --platform ios --profile production   # Build for iOS App Store
+eas submit --platform ios --profile production  # Submit to App Store
+npx expo prebuild --platform ios # Generate native iOS project for Xcode
+```
+
+**Build Profiles** (defined in `eas.json`):
+- `development`: Dev client with internal distribution
+- `preview`: Internal testing builds
+- `production`: App Store builds with auto-increment version
+
+**iOS Configuration**:
+- Bundle ID: `com.crackmac.chessopenings`
+- App Store ID: `6757377926`
+- See `docs/APP_STORE.md` for complete submission workflow
+
 ## Architecture
 
 ### Core Chess Logic Flow
@@ -87,6 +106,27 @@ User Move → useOpeningPractice hook
 - Interfaces with AsyncStorage
 - Calculates mastery levels, accuracy, ratings
 
+**useGamification** (`src/hooks/useGamification.ts`)
+- Manages XP, levels, achievements, and daily streaks
+- Interfaces with GamificationTracker service
+- Awards XP based on session completion and accuracy
+- Checks and unlocks achievements after each session
+- Tracks daily practice streaks
+
+### Gamification Services
+
+**GamificationTracker** (`src/services/gamification/gamificationTracker.ts`)
+- XP calculation: Base XP + accuracy bonus + difficulty multiplier
+- Level progression: Exponential XP requirements (100 * level^1.5)
+- Achievement system: 15+ achievements with progressive tiers
+- Achievement unlocking logic based on stats thresholds
+
+**OpeningRoulette** (`src/services/gamification/openingRoulette.ts`)
+- Weighted random opening selection
+- Prioritizes lower-mastery openings (0-2 stars)
+- Filters by difficulty level
+- Uses inverse mastery weights to encourage practice of weaker openings
+
 ### Opening Data Structure
 
 Openings are defined in `src/data/openings/` organized by difficulty:
@@ -130,11 +170,15 @@ Always use `engine.getTurn()` directly in callbacks to avoid stale closures. The
 - Theory exhausted: End without rating prompt (only if neither player has expected moves)
 - Rating prompt shows AFTER user taps the board (via `waitingForInteraction` state)
 
-### AsyncStorage Keys
-Progress data stored with prefixes:
-- `opening_progress_${openingId}`: Individual opening stats
+### AsyncStorage Schema
+Progress and gamification data stored with these key patterns:
+- `opening_progress_${openingId}`: Opening stats (attempts, accuracy, mastery, ratings)
 - `session_stats_${sessionId}`: Historical session data
-- `opening_rating_${openingId}`: User difficulty ratings
+- `opening_rating_${openingId}`: User difficulty ratings (hard/good/easy)
+- `gamification_data`: XP, level, total XP earned
+- `achievements_${achievementId}`: Achievement unlock status
+- `daily_streak_data`: Current streak, last practice date
+- `user_stats`: Global statistics (total sessions, openings completed, etc.)
 
 ## Testing
 
@@ -143,10 +187,19 @@ Progress data stored with prefixes:
 - Jest configuration in `package.json`
 - Test setup in `jest.setup.js` (mocks AsyncStorage, react-native-reanimated)
 
-### Running Single Test File
+### Running Specific Tests
 ```bash
-npm test -- path/to/test.test.ts
+npm test -- useOpeningPractice.test.ts     # Run single test file
+npm test -- --testNamePattern="should handle user moves"  # Run tests matching pattern
+npm run test:watch                          # Watch mode for development
+npm run test:coverage                       # Generate coverage report
 ```
+
+### Common Test Patterns
+- Mock AsyncStorage is automatically configured in `jest.setup.js`
+- Use `@testing-library/react-native` for component testing
+- Console warnings/errors are silenced in test environment
+- Tests use `jest-expo` preset for Expo-specific transformations
 
 ### Mocked Modules
 Tests automatically mock:
@@ -216,6 +269,29 @@ Never mutate chess.js game instance directly. Always use ChessEngine wrapper met
 
 ### Move Feedback Timing
 Use setTimeout delays for AI moves (500ms) and session endings (100ms) to give users time to see board state changes before UI updates.
+
+## Common Issues & Solutions
+
+### "Cannot find module" Errors
+1. Verify `node_modules/` exists: `ls node_modules | wc -l` (should show ~100+ packages)
+2. Run `npm install` to reinstall dependencies
+3. Clear Metro cache: `npm start -- --clear`
+4. If persists, delete and reinstall: `rm -rf node_modules && npm install`
+
+### Metro Bundler Not Starting
+- Check that `metro.config.js` exists
+- Clear watchman: `watchman watch-del-all` (if watchman installed)
+- Reset bundler: `npx react-native start --reset-cache`
+
+### iOS Build Fails
+- Ensure Xcode command line tools installed: `xcode-select --install`
+- Generate iOS project: `npx expo prebuild --platform ios --clean`
+- Clear derived data: `rm -rf ~/Library/Developer/Xcode/DerivedData`
+
+### Type Errors After Changes
+- Run `npx tsc --noEmit` to see all TypeScript errors
+- Check that all imports are correct
+- Verify type definitions in `src/types/` match usage
 
 # Agent Instructions
 
