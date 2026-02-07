@@ -297,6 +297,15 @@ Use setTimeout delays for AI moves (500ms) and session endings (100ms) to give u
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+## Supervisor Database
+
+This project is tracked under a supervisor-level beads database:
+`/Users/kevin.duane/Documents/projects/ai-projects/claude-code-projects/supervisor`
+
+The supervisor coordinates cross-project initiatives, prioritization, and resource allocation.
+
+See supervisor/docs/SUPERVISOR_GUIDE.md for details.
+
 ## Quick Reference
 
 ```bash
