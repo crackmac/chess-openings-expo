@@ -110,7 +110,9 @@ export const beginnerOpenings: Opening[] = [
     tags: ['system', 'solid', 'easy'],
     mainLine: [
       { from: 'd2', to: 'd4', san: 'd4', color: 'white' },
+      { from: 'd7', to: 'd5', san: 'd5', color: 'black' },
       { from: 'g1', to: 'f3', san: 'Nf3', color: 'white' },
+      { from: 'g8', to: 'f6', san: 'Nf6', color: 'black' },
       { from: 'c1', to: 'f4', san: 'Bf4', color: 'white' },
     ],
     alternateLines: [],
