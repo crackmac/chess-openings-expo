@@ -306,6 +306,75 @@ describe('GamificationTracker', () => {
       expect(result.currentStreak).toBe(1);
       expect(result.streakContinued).toBe(false);
     });
+
+    describe('calendar days', () => {
+      // Local-time dates, so the tests hold in any TZ the suite runs in.
+      const storeStreak = (lastPracticeDate: Date, currentStreak: number) => {
+        AsyncStorage.getItem.mockResolvedValue(
+          JSON.stringify({
+            totalXP: 0,
+            level: 1,
+            xpForNextLevel: 100,
+            currentStreak,
+            longestStreak: currentStreak,
+            lastPracticeDate: lastPracticeDate.toISOString(),
+            unlockedAchievements: [],
+            achievementProgress: {},
+          })
+        );
+      };
+
+      const savedData = () => {
+        const calls = AsyncStorage.setItem.mock.calls.filter(
+          ([key]: [string]) => key === '@chess_openings:gamification'
+        );
+        return JSON.parse(calls[calls.length - 1][1]);
+      };
+
+      it('continues the streak late at night then early next morning', async () => {
+        storeStreak(new Date(2026, 2, 10, 23, 30), 3);
+
+        const result = await GamificationTracker.updateStreak(
+          new Date(2026, 2, 11, 7, 15)
+        );
+
+        expect(result).toEqual({ streakContinued: true, currentStreak: 4 });
+        expect(savedData().longestStreak).toBe(4);
+      });
+
+      it('resets the streak when a whole calendar day was skipped', async () => {
+        // 47 hours apart, but the 11th had no practice
+        storeStreak(new Date(2026, 2, 10, 10, 0), 3);
+
+        const result = await GamificationTracker.updateStreak(
+          new Date(2026, 2, 12, 9, 0)
+        );
+
+        expect(result).toEqual({ streakContinued: false, currentStreak: 1 });
+      });
+
+      it('does not change the streak twice on the same calendar day', async () => {
+        storeStreak(new Date(2026, 2, 10, 0, 5), 3);
+
+        const result = await GamificationTracker.updateStreak(
+          new Date(2026, 2, 10, 23, 55)
+        );
+
+        expect(result).toEqual({ streakContinued: false, currentStreak: 3 });
+        expect(AsyncStorage.setItem).not.toHaveBeenCalled();
+      });
+
+      it('records the first practice as a streak of one, including longest', async () => {
+        storeStreak(new Date(2026, 2, 10, 9, 0), 0);
+
+        const result = await GamificationTracker.updateStreak(
+          new Date(2026, 2, 10, 9, 30)
+        );
+
+        expect(result).toEqual({ streakContinued: false, currentStreak: 1 });
+        expect(savedData()).toMatchObject({ currentStreak: 1, longestStreak: 1 });
+      });
+    });
   });
 
   describe('achievement system', () => {

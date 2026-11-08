@@ -215,32 +215,44 @@ export class GamificationTracker {
   static async updateStreak(practiceDate: Date): Promise<StreakUpdateResult> {
     const data = await this.load();
 
-    const daysDiff = Math.floor(
-      (practiceDate.getTime() - data.lastPracticeDate.getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
+    // Compare local calendar days, not elapsed 24h periods: practicing at
+    // 23:00 and again at 08:00 the next morning is a consecutive day.
+    const daysDiff =
+      this.localDayNumber(practiceDate) -
+      this.localDayNumber(data.lastPracticeDate);
 
     let streakContinued = false;
 
-    if (daysDiff === 0) {
+    if (data.currentStreak > 0 && daysDiff <= 0) {
       // Same day - no change
       return { streakContinued: false, currentStreak: data.currentStreak };
-    } else if (daysDiff === 1) {
+    } else if (data.currentStreak > 0 && daysDiff === 1) {
       // Next day - increment streak
       data.currentStreak += 1;
-      data.longestStreak = Math.max(data.longestStreak, data.currentStreak);
-      data.lastPracticeDate = practiceDate;
       streakContinued = true;
     } else {
-      // Missed day(s) - reset streak
+      // First practice or missed day(s) - start a new streak
       data.currentStreak = 1;
-      data.lastPracticeDate = practiceDate;
       streakContinued = false;
     }
+
+    data.longestStreak = Math.max(data.longestStreak, data.currentStreak);
+    data.lastPracticeDate = practiceDate;
 
     await this.save(data);
 
     return { streakContinued, currentStreak: data.currentStreak };
+  }
+
+  /**
+   * Number of whole calendar days since the epoch for the date's local day.
+   * Uses Date.UTC on the local Y/M/D so DST shifts don't skew the count.
+   */
+  private static localDayNumber(date: Date): number {
+    return Math.round(
+      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) /
+        (1000 * 60 * 60 * 24)
+    );
   }
 
   // ============================================================================
