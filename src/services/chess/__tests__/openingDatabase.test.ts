@@ -69,6 +69,7 @@ describe('OpeningDatabase', () => {
 
       const moveHistory: Move[] = [
         { from: 'd2', to: 'd4', san: 'd4', color: 'white' },
+        { from: 'd7', to: 'd5', san: 'd5', color: 'black' },
       ];
 
       const expectedMove = OpeningDatabase.getExpectedMove(
@@ -105,6 +106,7 @@ describe('OpeningDatabase', () => {
 
       const moveHistory: Move[] = [
         { from: 'd2', to: 'd4', san: 'd4', color: 'white' },
+        { from: 'd7', to: 'd5', san: 'd5', color: 'black' },
       ];
 
       const nextMove: Move = {
@@ -129,6 +131,7 @@ describe('OpeningDatabase', () => {
 
       const moveHistory: Move[] = [
         { from: 'd2', to: 'd4', san: 'd4', color: 'white' },
+        { from: 'd7', to: 'd5', san: 'd5', color: 'black' },
       ];
 
       const wrongMove: Move = {
