@@ -3,7 +3,7 @@
  * Shows detailed information about an opening and allows starting practice
  */
 
-import React, { useState, useLayoutEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,6 +14,7 @@ import {
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useAppTheme } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type OpeningDetailRouteProp = RouteProp<RootStackParamList, 'OpeningDetail'>;
@@ -22,37 +23,21 @@ export const OpeningDetailScreen: React.FC = () => {
   const route = useRoute<OpeningDetailRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { opening } = route.params;
+  const { theme } = useAppTheme();
   const [selectedColor, setSelectedColor] = useState<'white' | 'black'>(
     opening.color || 'white'
   );
 
-  // Ensure back button works by setting navigation options
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ paddingLeft: 16, paddingRight: 16 }}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={{ fontSize: 16, color: '#2196f3', fontWeight: '600' }}>
-            Back
-          </Text>
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
   const getDifficultyColor = () => {
     switch (opening.difficulty) {
       case 'beginner':
-        return '#4caf50';
+        return theme.colors.beginner;
       case 'intermediate':
-        return '#ff9800';
+        return theme.colors.intermediate;
       case 'advanced':
-        return '#f44336';
+        return theme.colors.advanced;
       default:
-        return '#757575';
+        return theme.colors.traps;
     }
   };
 
@@ -82,12 +67,12 @@ export const OpeningDetailScreen: React.FC = () => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.bgPrimary }]}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={true}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>{opening.name}</Text>
+        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>{opening.name}</Text>
         <View style={styles.meta}>
           <View
             style={[
@@ -95,38 +80,38 @@ export const OpeningDetailScreen: React.FC = () => {
               { backgroundColor: getDifficultyColor() },
             ]}
           >
-            <Text style={styles.difficultyText}>
+            <Text style={[styles.difficultyText, { color: theme.colors.textOnAccent }]}> 
               {opening.difficulty.toUpperCase()}
             </Text>
           </View>
-          <Text style={styles.eco}>ECO: {opening.eco}</Text>
+          <Text style={[styles.eco, { color: theme.colors.textSecondary }]}>ECO: {opening.eco}</Text>
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{opening.description}</Text>
+      <View style={[styles.section, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle }]}> 
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Description</Text>
+        <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{opening.description}</Text>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Main Line</Text>
-        <View style={styles.movesContainer}>
-          <Text style={styles.movesText}>{formatMoves(opening.mainLine)}</Text>
+      <View style={[styles.section, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle }]}> 
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Main Line</Text>
+        <View style={[styles.movesContainer, { backgroundColor: theme.colors.bgSecondary }]}> 
+          <Text style={[styles.movesText, { color: theme.colors.textPrimary }]}>{formatMoves(opening.mainLine)}</Text>
         </View>
       </View>
 
       {opening.alternateLines.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+        <View style={[styles.section, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle }]}> 
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}> 
             Variations ({opening.alternateLines.length})
           </Text>
           {opening.alternateLines.map((line, index) => (
-            <View key={index} style={styles.variation}>
-              <Text style={styles.variationName}>{line.name}</Text>
+            <View key={index} style={[styles.variation, { borderBottomColor: theme.colors.borderSubtle }]}> 
+              <Text style={[styles.variationName, { color: theme.colors.textPrimary }]}>{line.name}</Text>
               {line.description && (
-                <Text style={styles.variationDescription}>{line.description}</Text>
+                <Text style={[styles.variationDescription, { color: theme.colors.textSecondary }]}>{line.description}</Text>
               )}
-              <Text style={styles.variationMoves}>
+              <Text style={[styles.variationMoves, { color: theme.colors.textPrimary }]}> 
                 {formatMoves(line.moves)}
               </Text>
             </View>
@@ -134,31 +119,33 @@ export const OpeningDetailScreen: React.FC = () => {
         </View>
       )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tags</Text>
+      <View style={[styles.section, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle }]}> 
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Tags</Text>
         <View style={styles.tags}>
           {opening.tags.map((tag, index) => (
-            <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
+            <View key={index} style={[styles.tag, { backgroundColor: theme.colors.accentGoldMuted }]}> 
+              <Text style={[styles.tagText, { color: theme.colors.accentGold }]}>{tag}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Choose Your Side</Text>
+      <View style={[styles.section, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle }]}> 
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Choose Your Side</Text>
         <View style={styles.colorSelector}>
           <TouchableOpacity
             style={[
               styles.colorButton,
-              selectedColor === 'white' && styles.colorButtonActive,
+              { backgroundColor: theme.colors.bgSecondary, borderColor: 'transparent' },
+              selectedColor === 'white' && { backgroundColor: '#E2E8F0', borderColor: theme.colors.info },
             ]}
             onPress={() => setSelectedColor('white')}
           >
             <Text
               style={[
                 styles.colorButtonText,
-                selectedColor === 'white' && styles.colorButtonTextActive,
+                { color: theme.colors.textSecondary },
+                selectedColor === 'white' && { color: '#0F172A', fontWeight: '700' },
               ]}
             >
               White
@@ -167,14 +154,16 @@ export const OpeningDetailScreen: React.FC = () => {
           <TouchableOpacity
             style={[
               styles.colorButton,
-              selectedColor === 'black' && styles.colorButtonActive,
+              { backgroundColor: theme.colors.bgSecondary, borderColor: 'transparent' },
+              selectedColor === 'black' && { backgroundColor: '#111827', borderColor: theme.colors.info },
             ]}
             onPress={() => setSelectedColor('black')}
           >
             <Text
               style={[
                 styles.colorButtonText,
-                selectedColor === 'black' && styles.colorButtonTextActive,
+                { color: theme.colors.textSecondary },
+                selectedColor === 'black' && { color: '#E2E8F0', fontWeight: '700' },
               ]}
             >
               Black
@@ -184,7 +173,7 @@ export const OpeningDetailScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity
-        style={styles.startButton}
+        style={[styles.startButton, { backgroundColor: theme.colors.accentGold, ...theme.shadow.soft }]}
         onPress={() =>
           navigation.navigate('Game', {
             opening,
@@ -192,7 +181,7 @@ export const OpeningDetailScreen: React.FC = () => {
           })
         }
       >
-        <Text style={styles.startButtonText}>Start Practice</Text>
+        <Text style={[styles.startButtonText, { color: theme.colors.textOnAccent }]}>Start Practice</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -201,7 +190,6 @@ export const OpeningDetailScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   content: {
     padding: 20,
@@ -211,8 +199,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 12,
   },
   meta: {
@@ -222,65 +209,56 @@ const styles = StyleSheet.create({
   difficultyBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 8,
     marginRight: 12,
   },
   difficultyText: {
-    color: '#fff',
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   eco: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '500',
   },
   section: {
-    backgroundColor: '#fff',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 16,
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 12,
   },
   description: {
     fontSize: 16,
-    color: '#666',
     lineHeight: 24,
   },
   movesContainer: {
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     padding: 12,
   },
   movesText: {
     fontSize: 14,
-    color: '#333',
     fontFamily: 'monospace',
   },
   variation: {
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   variationName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 4,
   },
   variationDescription: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 8,
   },
   variationMoves: {
     fontSize: 14,
-    color: '#333',
     fontFamily: 'monospace',
   },
   tags: {
@@ -288,16 +266,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   tag: {
-    backgroundColor: '#e3f2fd',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 4,
+    borderRadius: 8,
     marginRight: 8,
     marginBottom: 8,
   },
   tagText: {
     fontSize: 12,
-    color: '#1976d2',
+    fontWeight: '600',
   },
   colorSelector: {
     flexDirection: 'row',
@@ -307,36 +284,22 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     borderRadius: 8,
-    backgroundColor: '#f5f5f5',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  colorButtonActive: {
-    backgroundColor: '#e3f2fd',
-    borderColor: '#2196f3',
   },
   colorButtonText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#666',
-  },
-  colorButtonTextActive: {
-    color: '#2196f3',
-    fontWeight: 'bold',
   },
   startButton: {
-    backgroundColor: '#4caf50',
     paddingVertical: 16,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 32,
   },
   startButtonText: {
-    color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
-

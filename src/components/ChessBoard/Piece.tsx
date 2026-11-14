@@ -1,11 +1,18 @@
 /**
  * Chess Piece Component
- * Renders chess pieces using Unicode symbols
+ * Renders chess pieces as vector Staunton shapes
  */
 
 import React from 'react';
-import { Text } from 'react-native-svg';
-import { StyleSheet } from 'react-native';
+import { G } from 'react-native-svg';
+import {
+  StauntonBishop,
+  StauntonKing,
+  StauntonKnight,
+  StauntonPawn,
+  StauntonQueen,
+  StauntonRook,
+} from './pieces/staunton';
 
 interface PieceProps {
   x: number;
@@ -15,28 +22,25 @@ interface PieceProps {
   color: 'white' | 'black';
 }
 
-const PIECE_SYMBOLS: Record<string, { white: string; black: string }> = {
-  p: { white: '♙', black: '♟' },
-  r: { white: '♖', black: '♜' },
-  n: { white: '♘', black: '♞' },
-  b: { white: '♗', black: '♝' },
-  q: { white: '♕', black: '♛' },
-  k: { white: '♔', black: '♚' },
-};
-
 export const Piece: React.FC<PieceProps> = ({ x, y, size, type, color }) => {
-  const symbol = PIECE_SYMBOLS[type]?.[color] || '';
+  const renderByType = () => {
+    switch (type) {
+      case 'p':
+        return <StauntonPawn x={x} y={y} size={size} color={color} />;
+      case 'r':
+        return <StauntonRook x={x} y={y} size={size} color={color} />;
+      case 'n':
+        return <StauntonKnight x={x} y={y} size={size} color={color} />;
+      case 'b':
+        return <StauntonBishop x={x} y={y} size={size} color={color} />;
+      case 'q':
+        return <StauntonQueen x={x} y={y} size={size} color={color} />;
+      case 'k':
+        return <StauntonKing x={x} y={y} size={size} color={color} />;
+      default:
+        return null;
+    }
+  };
 
-  return (
-    <Text
-      x={x + size / 2}
-      y={y + size / 2 + size * 0.35}
-      fontSize={size * 0.7}
-      textAnchor="middle"
-      fill={color === 'white' ? '#fff' : '#000'}
-      fontWeight="bold"
-    >
-      {symbol}
-    </Text>
-  );
+  return <G>{renderByType()}</G>;
 };

@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useAppTheme } from '../../theme';
 
 interface XPProgressBarProps {
   level: number;
@@ -20,26 +21,30 @@ export const XPProgressBar: React.FC<XPProgressBarProps> = ({
   xpForNextLevel,
   compact = false,
 }) => {
+  const { theme } = useAppTheme();
+
   // Calculate progress percentage (0-100)
   const progress = Math.min((currentXP / xpForNextLevel) * 100, 100);
 
   return (
     <View style={compact ? styles.containerCompact : styles.container}>
       <View style={styles.header}>
-        <View style={styles.levelBadge}>
-          <Text style={styles.levelText}>LV {level}</Text>
+        <View style={[styles.levelBadge, { backgroundColor: theme.colors.accentGold }]}> 
+          <Text style={[styles.levelText, { color: theme.colors.textOnAccent }]}>LV {level}</Text>
         </View>
-        <Text style={styles.xpText}>
+        <Text style={[styles.xpText, { color: theme.colors.textSecondary }]}>
           {currentXP} / {xpForNextLevel} XP
         </Text>
       </View>
 
-      <View style={styles.barBackground}>
-        <View style={[styles.barFill, { width: `${progress}%` }]} />
+      <View style={[styles.barBackground, { backgroundColor: theme.colors.borderSubtle }]}> 
+        <View style={[styles.barFill, { width: `${progress}%`, backgroundColor: theme.colors.accentGold }]} />
       </View>
 
       {!compact && (
-        <Text style={styles.progressText}>{Math.floor(progress)}% to next level</Text>
+        <Text style={[styles.progressText, { color: theme.colors.textMuted }]}>
+          {Math.floor(progress)}% to next level
+        </Text>
       )}
     </View>
   );
@@ -59,35 +64,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   levelBadge: {
-    backgroundColor: '#007AFF',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
   levelText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
   },
   xpText: {
     fontSize: 14,
-    color: '#666',
     fontWeight: '600',
   },
   barBackground: {
     height: 12,
-    backgroundColor: '#E0E0E0',
     borderRadius: 6,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
     borderRadius: 6,
   },
   progressText: {
     fontSize: 12,
-    color: '#999',
     marginTop: 4,
     textAlign: 'right',
   },

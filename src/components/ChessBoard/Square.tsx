@@ -3,17 +3,20 @@
  */
 
 import React from 'react';
-import { Rect } from 'react-native-svg';
-import { StyleSheet } from 'react-native';
+import { Circle, Rect } from 'react-native-svg';
+import { useAppTheme } from '../../theme';
+
+type HighlightType = 'dot' | 'capture' | null;
 
 interface SquareProps {
   x: number;
   y: number;
   size: number;
   isLight: boolean;
-  isHighlighted?: boolean;
+  highlightType?: HighlightType;
   isLastMove?: boolean;
   isSelected?: boolean;
+  isCheckSquare?: boolean;
 }
 
 export const Square: React.FC<SquareProps> = ({
@@ -21,25 +24,50 @@ export const Square: React.FC<SquareProps> = ({
   y,
   size,
   isLight,
-  isHighlighted,
+  highlightType,
   isLastMove,
   isSelected,
+  isCheckSquare,
 }) => {
-  const getFillColor = () => {
-    if (isSelected) return '#b0c4de'; // Light blue for selected
-    if (isLastMove) return '#f0e68c'; // Khaki for last move
-    if (isHighlighted) return '#90ee90'; // Light green for valid moves
-    return isLight ? '#f0d9b5' : '#b58863'; // Standard light/dark squares
-  };
+  const { theme } = useAppTheme();
+
+  const baseFill = isLight ? theme.colors.boardLight : theme.colors.boardDark;
 
   return (
-    <Rect
-      x={x}
-      y={y}
-      width={size}
-      height={size}
-      fill={getFillColor()}
-    />
+    <>
+      <Rect x={x} y={y} width={size} height={size} fill={baseFill} />
+
+      {isLastMove && (
+        <Rect x={x} y={y} width={size} height={size} fill={theme.colors.boardLastMove} />
+      )}
+
+      {isSelected && (
+        <Rect x={x} y={y} width={size} height={size} fill={theme.colors.boardSelected} />
+      )}
+
+      {isCheckSquare && (
+        <Rect x={x} y={y} width={size} height={size} fill={theme.colors.boardCheck} />
+      )}
+
+      {highlightType === 'dot' && (
+        <Circle
+          cx={x + size / 2}
+          cy={y + size / 2}
+          r={size * 0.14}
+          fill={theme.colors.boardMoveDot}
+        />
+      )}
+
+      {highlightType === 'capture' && (
+        <Circle
+          cx={x + size / 2}
+          cy={y + size / 2}
+          r={size * 0.42}
+          fill="transparent"
+          stroke={theme.colors.boardCaptureRing}
+          strokeWidth={size * 0.08}
+        />
+      )}
+    </>
   );
 };
-

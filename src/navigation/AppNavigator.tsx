@@ -4,16 +4,18 @@
  */
 
 import React from 'react';
-import { View, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, Theme as NavigationTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { OpeningBrowserScreen } from '../screens/OpeningBrowserScreen';
 import { OpeningDetailScreen } from '../screens/OpeningDetailScreen';
 import { GameScreen } from '../screens/GameScreen';
 import { BoardTestScreen } from '../screens/BoardTestScreen';
 import { ProgressScreen } from '../screens/ProgressScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
 import { Opening } from '../types';
+import { useAppTheme } from '../theme';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -25,56 +27,89 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   Browse: undefined;
   Progress: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainTabs = () => {
+  const { theme } = useAppTheme();
+
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#2196f3',
-        tabBarInactiveTintColor: '#666',
+        tabBarActiveTintColor: theme.colors.accentGold,
+        tabBarInactiveTintColor: theme.colors.textMuted,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: theme.colors.bgSecondary,
           borderTopWidth: 1,
-          borderTopColor: '#e0e0e0',
+          borderTopColor: theme.colors.borderSubtle,
+          height: 62,
+          paddingTop: 6,
         },
-      }}
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          paddingBottom: 4,
+        },
+        tabBarIcon: ({ color, size }) => {
+          const iconName: Record<keyof MainTabParamList, React.ComponentProps<typeof Ionicons>['name']> = {
+            Browse: 'book-outline',
+            Progress: 'stats-chart-outline',
+            Settings: 'settings-outline',
+          };
+
+          return <Ionicons name={iconName[route.name as keyof MainTabParamList]} size={size} color={color} />;
+        },
+      })}
     >
       <Tab.Screen
         name="Browse"
         component={OpeningBrowserScreen}
-        options={{
-          tabBarLabel: 'Browse',
-          tabBarIcon: () => null, // You can add icons here later
-        }}
+        options={{ tabBarLabel: 'Openings' }}
       />
       <Tab.Screen
         name="Progress"
         component={ProgressScreen}
-        options={{
-          tabBarLabel: 'Progress',
-          tabBarIcon: () => null, // You can add icons here later
-        }}
+        options={{ tabBarLabel: 'Progress' }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ tabBarLabel: 'Settings' }}
       />
     </Tab.Navigator>
   );
 };
 
 export const AppNavigator = () => {
+  const { theme } = useAppTheme();
+
+  const navigationTheme: NavigationTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      primary: theme.colors.accentGold,
+      background: theme.colors.bgPrimary,
+      card: theme.colors.bgSecondary,
+      text: theme.colors.textPrimary,
+      border: theme.colors.borderSubtle,
+      notification: theme.colors.accentGold,
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#fff',
+            backgroundColor: theme.colors.bgSecondary,
           },
-          headerTintColor: '#333',
+          headerTintColor: theme.colors.textPrimary,
           headerTitleStyle: {
-            fontWeight: 'bold',
+            fontWeight: '700',
           },
         }}
       >
@@ -88,7 +123,7 @@ export const AppNavigator = () => {
           component={OpeningDetailScreen}
           options={{
             title: 'Opening Details',
-            headerBackTitle: 'Back'
+            headerBackTitle: 'Back',
           }}
         />
         <Stack.Screen
@@ -108,4 +143,3 @@ export const AppNavigator = () => {
     </NavigationContainer>
   );
 };
-

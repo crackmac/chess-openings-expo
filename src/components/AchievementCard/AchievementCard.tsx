@@ -7,6 +7,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Achievement } from '../../types/gamification';
+import { useAppTheme } from '../../theme';
 
 interface AchievementCardProps {
   achievement: Achievement;
@@ -21,6 +22,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
   progress = 0,
   compact = false,
 }) => {
+  const { theme } = useAppTheme();
   const progressPercentage = Math.min(progress * 100, 100);
 
   // Get tier color
@@ -35,7 +37,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
       case 'platinum':
         return '#E5E4E2';
       default:
-        return '#999';
+        return theme.colors.textMuted;
     }
   };
 
@@ -43,6 +45,11 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
     <View
       style={[
         styles.card,
+        {
+          backgroundColor: theme.colors.surfaceCard,
+          borderColor: theme.colors.borderSubtle,
+          ...theme.shadow.soft,
+        },
         !unlocked && styles.cardLocked,
         compact && styles.cardCompact,
       ]}
@@ -56,7 +63,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
           <Text
             style={[
               styles.name,
-              !unlocked && styles.nameLocked,
+              { color: unlocked ? theme.colors.textPrimary : theme.colors.textMuted },
               compact && styles.nameCompact,
             ]}
           >
@@ -74,7 +81,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
         <Text
           style={[
             styles.description,
-            !unlocked && styles.descriptionLocked,
+            { color: unlocked ? theme.colors.textSecondary : theme.colors.textMuted },
             compact && styles.descriptionCompact,
           ]}
         >
@@ -83,22 +90,25 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
 
         {!unlocked && progress > 0 && (
           <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
+            <View style={[styles.progressBar, { backgroundColor: theme.colors.borderSubtle }]}> 
               <View
                 style={[
                   styles.progressFill,
-                  { width: `${progressPercentage}%` },
+                  {
+                    width: `${progressPercentage}%`,
+                    backgroundColor: theme.colors.success,
+                  },
                 ]}
               />
             </View>
-            <Text style={styles.progressText}>
+            <Text style={[styles.progressText, { color: theme.colors.textSecondary }]}> 
               {Math.floor(progressPercentage)}%
             </Text>
           </View>
         )}
 
         {!compact && (
-          <Text style={styles.reward}>+{achievement.xpReward} XP</Text>
+          <Text style={[styles.reward, { color: theme.colors.accentGold }]}>+{achievement.xpReward} XP</Text>
         )}
       </View>
     </View>
@@ -108,18 +118,13 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   cardLocked: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   cardCompact: {
     padding: 12,
@@ -144,22 +149,14 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#333',
     flex: 1,
-  },
-  nameLocked: {
-    color: '#999',
   },
   nameCompact: {
     fontSize: 14,
   },
   description: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 8,
-  },
-  descriptionLocked: {
-    color: '#AAA',
   },
   descriptionCompact: {
     fontSize: 12,
@@ -183,26 +180,22 @@ const styles = StyleSheet.create({
   progressBar: {
     flex: 1,
     height: 8,
-    backgroundColor: '#E0E0E0',
     borderRadius: 4,
     overflow: 'hidden',
     marginRight: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#4CAF50',
     borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
-    color: '#666',
     fontWeight: '600',
     width: 40,
     textAlign: 'right',
   },
   reward: {
     fontSize: 12,
-    color: '#007AFF',
     fontWeight: '600',
   },
 });

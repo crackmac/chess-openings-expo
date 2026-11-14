@@ -22,6 +22,7 @@ import { Opening } from '../types';
 import { useProgress } from '../hooks/useProgress';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { OpeningRoulette } from '../services/gamification/openingRoulette';
+import { useAppTheme } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,6 +31,7 @@ type DifficultyFilter = 'all' | 'beginner' | 'intermediate' | 'advanced';
 export const OpeningBrowserScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { getOpeningProgress, progress } = useProgress();
+  const { theme } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [difficultyFilter, setDifficultyFilter] =
     useState<DifficultyFilter>('all');
@@ -52,7 +54,12 @@ export const OpeningBrowserScreen: React.FC = () => {
 
     // Filter by search query
     if (searchQuery.trim()) {
-      openings = openingDatabase.searchOpenings(searchQuery.trim());
+      const query = searchQuery.trim().toLowerCase();
+      openings = openings.filter((opening) =>
+        opening.name.toLowerCase().includes(query) ||
+        opening.eco.toLowerCase().includes(query) ||
+        opening.tags.some((tag) => tag.toLowerCase().includes(query))
+      );
     }
 
     return openings;
@@ -84,48 +91,46 @@ export const OpeningBrowserScreen: React.FC = () => {
 
     const selectedOpening = rouletteInstance.selectOpening(filteredOpenings, progress);
 
-    // Randomly assign user color (50/50 chance)
-    const userColor = Math.random() < 0.5 ? 'white' : 'black';
-
-    // Navigate directly to game
     navigation.navigate('Game', {
       opening: selectedOpening,
-      userColor,
+      userColor: selectedOpening.color,
     });
   }, [filteredOpenings, progress, navigation, rouletteInstance]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Chess Openings</Text>
-        <Text style={styles.subtitle}>
+    <View style={[styles.container, { backgroundColor: theme.colors.bgPrimary }]}> 
+      <View style={[styles.header, { backgroundColor: theme.colors.bgSecondary, borderBottomColor: theme.colors.borderSubtle }]}> 
+        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Chess Openings</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}> 
           {filteredOpenings.length} opening{filteredOpenings.length !== 1 ? 's' : ''} found
         </Text>
       </View>
 
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.bgSecondary, borderBottomColor: theme.colors.borderSubtle }]}> 
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { backgroundColor: theme.colors.bgElevated, color: theme.colors.textPrimary }]}
           placeholder="Search by name, ECO code, or tag..."
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholderTextColor="#999"
+          placeholderTextColor={theme.colors.textMuted}
         />
       </View>
 
-      <View style={styles.filterContainer}>
+      <View style={[styles.filterContainer, { backgroundColor: theme.colors.bgSecondary, borderBottomColor: theme.colors.borderSubtle }]}> 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <TouchableOpacity
             style={[
               styles.filterButton,
-              difficultyFilter === 'all' && styles.filterButtonActive,
+              { backgroundColor: theme.colors.bgElevated },
+              difficultyFilter === 'all' && { backgroundColor: theme.colors.accentGold },
             ]}
             onPress={() => setDifficultyFilter('all')}
           >
             <Text
               style={[
                 styles.filterButtonText,
-                difficultyFilter === 'all' && styles.filterButtonTextActive,
+                { color: theme.colors.textSecondary },
+                difficultyFilter === 'all' && { color: theme.colors.textOnAccent },
               ]}
             >
               All
@@ -134,14 +139,16 @@ export const OpeningBrowserScreen: React.FC = () => {
           <TouchableOpacity
             style={[
               styles.filterButton,
-              difficultyFilter === 'beginner' && styles.filterButtonActive,
+              { backgroundColor: theme.colors.bgElevated },
+              difficultyFilter === 'beginner' && { backgroundColor: theme.colors.beginner },
             ]}
             onPress={() => setDifficultyFilter('beginner')}
           >
             <Text
               style={[
                 styles.filterButtonText,
-                difficultyFilter === 'beginner' && styles.filterButtonTextActive,
+                { color: theme.colors.textSecondary },
+                difficultyFilter === 'beginner' && { color: theme.colors.textOnAccent },
               ]}
             >
               Beginner
@@ -150,14 +157,16 @@ export const OpeningBrowserScreen: React.FC = () => {
           <TouchableOpacity
             style={[
               styles.filterButton,
-              difficultyFilter === 'intermediate' && styles.filterButtonActive,
+              { backgroundColor: theme.colors.bgElevated },
+              difficultyFilter === 'intermediate' && { backgroundColor: theme.colors.intermediate },
             ]}
             onPress={() => setDifficultyFilter('intermediate')}
           >
             <Text
               style={[
                 styles.filterButtonText,
-                difficultyFilter === 'intermediate' && styles.filterButtonTextActive,
+                { color: theme.colors.textSecondary },
+                difficultyFilter === 'intermediate' && { color: theme.colors.textOnAccent },
               ]}
             >
               Intermediate
@@ -166,14 +175,16 @@ export const OpeningBrowserScreen: React.FC = () => {
           <TouchableOpacity
             style={[
               styles.filterButton,
-              difficultyFilter === 'advanced' && styles.filterButtonActive,
+              { backgroundColor: theme.colors.bgElevated },
+              difficultyFilter === 'advanced' && { backgroundColor: theme.colors.advanced },
             ]}
             onPress={() => setDifficultyFilter('advanced')}
           >
             <Text
               style={[
                 styles.filterButtonText,
-                difficultyFilter === 'advanced' && styles.filterButtonTextActive,
+                { color: theme.colors.textSecondary },
+                difficultyFilter === 'advanced' && { color: theme.colors.textOnAccent },
               ]}
             >
               Advanced
@@ -184,12 +195,12 @@ export const OpeningBrowserScreen: React.FC = () => {
 
       {/* Random Opening Button */}
       <TouchableOpacity
-        style={styles.rouletteButton}
+        style={[styles.rouletteButton, { backgroundColor: theme.colors.accentGold, ...theme.shadow.soft }]}
         onPress={handleRoulettePress}
         disabled={filteredOpenings.length === 0}
       >
-        <Text style={styles.rouletteIcon}>🎲</Text>
-        <Text style={styles.rouletteText}>Random Opening</Text>
+        <Text style={[styles.rouletteIcon, { color: theme.colors.textOnAccent }]}>♞</Text>
+        <Text style={[styles.rouletteText, { color: theme.colors.textOnAccent }]}>Quick Drill</Text>
       </TouchableOpacity>
 
       <ScrollView
@@ -199,16 +210,16 @@ export const OpeningBrowserScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#2196f3"
+            tintColor={theme.colors.accentGold}
           />
         }
       >
         {/* Recommended for You Section */}
         {recommendedOpenings.length > 0 && (
-          <View style={styles.recommendedSection}>
+          <View style={[styles.recommendedSection, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle, ...theme.shadow.soft }]}> 
             <View style={styles.recommendedHeader}>
-              <Text style={styles.recommendedTitle}>✨ Recommended for You</Text>
-              <Text style={styles.recommendedSubtitle}>
+              <Text style={[styles.recommendedTitle, { color: theme.colors.textPrimary }]}>Recommended for You</Text>
+              <Text style={[styles.recommendedSubtitle, { color: theme.colors.textSecondary }]}> 
                 Intelligent selection based on your progress
               </Text>
             </View>
@@ -225,7 +236,7 @@ export const OpeningBrowserScreen: React.FC = () => {
 
         {/* All Openings Section */}
         <View style={styles.allOpeningsSection}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}> 
             {searchQuery || difficultyFilter !== 'all'
               ? 'Search Results'
               : 'All Openings'}
@@ -234,8 +245,8 @@ export const OpeningBrowserScreen: React.FC = () => {
 
         {filteredOpenings.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No openings found</Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Text style={[styles.emptyStateText, { color: theme.colors.textPrimary }]}>No openings found</Text>
+            <Text style={[styles.emptyStateSubtext, { color: theme.colors.textMuted }]}> 
               Try adjusting your search or filter
             </Text>
           </View>
@@ -257,86 +268,60 @@ export const OpeningBrowserScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
+    paddingTop: 56,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   searchInput: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    color: '#333',
   },
   filterContainer: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
     marginRight: 8,
-  },
-  filterButtonActive: {
-    backgroundColor: '#2196f3',
   },
   filterButtonText: {
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  filterButtonTextActive: {
-    color: '#fff',
+    fontWeight: '600',
   },
   rouletteButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   rouletteIcon: {
-    fontSize: 24,
+    fontSize: 20,
     marginRight: 8,
   },
   rouletteText: {
-    color: '#FFFFFF',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   openingsList: {
     flex: 1,
@@ -351,37 +336,28 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#666',
+    fontWeight: '700',
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#999',
   },
   recommendedSection: {
     marginBottom: 24,
-    backgroundColor: '#fff',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   recommendedHeader: {
     marginBottom: 12,
   },
   recommendedTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 4,
   },
   recommendedSubtitle: {
     fontSize: 13,
-    color: '#666',
     marginBottom: 12,
   },
   allOpeningsSection: {
@@ -389,9 +365,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 8,
   },
 });
-

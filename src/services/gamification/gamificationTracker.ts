@@ -222,6 +222,15 @@ export class GamificationTracker {
 
     let streakContinued = false;
 
+    if (data.currentStreak === 0) {
+      // First practice - start streak at 1
+      data.currentStreak = 1;
+      data.longestStreak = Math.max(data.longestStreak, 1);
+      data.lastPracticeDate = practiceDate;
+      await this.save(data);
+      return { streakContinued: false, currentStreak: data.currentStreak };
+    }
+
     if (daysDiff === 0) {
       // Same day - no change
       return { streakContinued: false, currentStreak: data.currentStreak };
@@ -234,6 +243,7 @@ export class GamificationTracker {
     } else {
       // Missed day(s) - reset streak
       data.currentStreak = 1;
+      data.longestStreak = Math.max(data.longestStreak, 1);
       data.lastPracticeDate = practiceDate;
       streakContinued = false;
     }

@@ -1,0 +1,3 @@
+# Typed StyleSheet Theme Tokens and Custom SVG/Reanimated Chess Board
+
+We build the App Theme, Board Theme, and animated chess board in-house using typed React Native `StyleSheet` design tokens, `react-native-svg`, `react-native-reanimated`, and `react-native-gesture-handler` rather than adopting a UI framework (NativeWind, Tamagui, React Native Paper) or a WebView chessboard. Those core native primitives are already installed and compatible with Expo SDK 54's New Architecture (`newArchEnabled: true`) and our `babel-jest` setup (`babel.config.js`), whereas CSS-in-JS/compiler UI kits add Babel/Metro build friction without solving chess-specific vector piece rendering, SVG move arrows, or 60fps square-to-square drag physics.

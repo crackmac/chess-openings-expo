@@ -48,6 +48,3 @@ yarn-error.*
 
 # test coverage
 coverage/
-
-# beads issue tracking
-.beads/

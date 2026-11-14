@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Modal,
 } from 'react-native';
+import { useAppTheme } from '../../theme';
 
 interface DifficultyRatingProps {
   visible: boolean;
@@ -27,25 +28,27 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
   onSkip,
   openingName,
 }) => {
+  const { theme } = useAppTheme();
+
   const getButtonStyle = (rating: 'hard' | 'good' | 'easy') => {
     const isSelected = currentRating === rating;
     switch (rating) {
       case 'hard':
         return [
           styles.button,
-          styles.hardButton,
+          { backgroundColor: 'rgba(239, 68, 68, 0.16)', borderColor: theme.colors.danger },
           isSelected && styles.buttonSelected,
         ];
       case 'good':
         return [
           styles.button,
-          styles.goodButton,
+          { backgroundColor: 'rgba(74, 158, 255, 0.18)', borderColor: theme.colors.info },
           isSelected && styles.buttonSelected,
         ];
       case 'easy':
         return [
           styles.button,
-          styles.easyButton,
+          { backgroundColor: 'rgba(46, 204, 113, 0.16)', borderColor: theme.colors.success },
           isSelected && styles.buttonSelected,
         ];
     }
@@ -53,14 +56,11 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
 
   const getButtonTextStyle = (rating: 'hard' | 'good' | 'easy') => {
     const isSelected = currentRating === rating;
-    switch (rating) {
-      case 'hard':
-        return [styles.buttonText, isSelected && styles.buttonTextSelected];
-      case 'good':
-        return [styles.buttonText, isSelected && styles.buttonTextSelected];
-      case 'easy':
-        return [styles.buttonText, isSelected && styles.buttonTextSelected];
-    }
+    return [
+      styles.buttonText,
+      { color: theme.colors.textPrimary },
+      isSelected && styles.buttonTextSelected,
+    ];
   };
 
   return (
@@ -70,13 +70,13 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
       animationType="fade"
       onRequestClose={onSkip}
     >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Rate Opening Difficulty</Text>
+      <View style={[styles.overlay, { backgroundColor: theme.colors.overlay }]}> 
+        <View style={[styles.container, { backgroundColor: theme.colors.bgSecondary, borderColor: theme.colors.borderSubtle }]}> 
+          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Rate Recall</Text>
           {openingName && (
-            <Text style={styles.subtitle}>{openingName}</Text>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{openingName}</Text>
           )}
-          <Text style={styles.description}>
+          <Text style={[styles.description, { color: theme.colors.textSecondary }]}> 
             How difficult was this opening to remember?
           </Text>
 
@@ -87,7 +87,7 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
               activeOpacity={0.7}
             >
               <Text style={getButtonTextStyle('hard')}>Hard</Text>
-              <Text style={styles.buttonHint}>
+              <Text style={[styles.buttonHint, { color: theme.colors.textSecondary }]}> 
                 Difficult to remember
               </Text>
             </TouchableOpacity>
@@ -98,7 +98,7 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
               activeOpacity={0.7}
             >
               <Text style={getButtonTextStyle('good')}>Good</Text>
-              <Text style={styles.buttonHint}>
+              <Text style={[styles.buttonHint, { color: theme.colors.textSecondary }]}> 
                 Manageable with effort
               </Text>
             </TouchableOpacity>
@@ -109,7 +109,7 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
               activeOpacity={0.7}
             >
               <Text style={getButtonTextStyle('easy')}>Easy</Text>
-              <Text style={styles.buttonHint}>
+              <Text style={[styles.buttonHint, { color: theme.colors.textSecondary }]}> 
                 Easy to remember
               </Text>
             </TouchableOpacity>
@@ -120,7 +120,7 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
               style={styles.skipButton}
               onPress={onSkip}
             >
-              <Text style={styles.skipButtonText}>Skip</Text>
+              <Text style={[styles.skipButtonText, { color: theme.colors.textMuted }]}>Skip</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -132,13 +132,12 @@ export const DifficultyRating: React.FC<DifficultyRatingProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    backgroundColor: '#fff',
     borderRadius: 16,
+    borderWidth: 1,
     padding: 24,
     width: '85%',
     maxWidth: 400,
@@ -146,18 +145,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 16,
   },
   description: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -170,20 +166,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: 'transparent',
     alignItems: 'center',
-  },
-  hardButton: {
-    backgroundColor: '#ffebee',
-    borderColor: '#f44336',
-  },
-  goodButton: {
-    backgroundColor: '#e3f2fd',
-    borderColor: '#2196f3',
-  },
-  easyButton: {
-    backgroundColor: '#e8f5e9',
-    borderColor: '#4caf50',
   },
   buttonSelected: {
     borderWidth: 3,
@@ -191,7 +174,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginBottom: 4,
   },
   buttonTextSelected: {
@@ -199,7 +182,6 @@ const styles = StyleSheet.create({
   },
   buttonHint: {
     fontSize: 12,
-    color: '#666',
     textAlign: 'center',
   },
   skipButton: {
@@ -209,7 +191,5 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: 14,
-    color: '#999',
   },
 });
-

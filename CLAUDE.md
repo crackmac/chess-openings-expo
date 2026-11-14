@@ -293,52 +293,21 @@ Use setTimeout delays for AI moves (500ms) and session endings (100ms) to give u
 - Check that all imports are correct
 - Verify type definitions in `src/types/` match usage
 
-# Agent Instructions
+## Roadmap & Planning
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+Planned features, active backlog priorities, and completed milestones are tracked in `docs/ROADMAP.md` (with detailed feature specifications in `docs/PRD.md`). Update `docs/ROADMAP.md` as tasks are completed or added.
 
-## Supervisor Database
+## Agent skills
 
-This project is tracked under a supervisor-level beads database:
-`/Users/kevin.duane/Documents/projects/ai-projects/claude-code-projects/supervisor`
+### Issue tracker
 
-The supervisor coordinates cross-project initiatives, prioritization, and resource allocation.
+Issues are tracked as GitHub issues on crackmac/chess-openings-expo via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
-See supervisor/docs/SUPERVISOR_GUIDE.md for details.
+### Triage labels
 
-## Quick Reference
+Default five-role vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
 
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
-```
+### Domain docs
 
-## Landing the Plane (Session Completion)
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+Single-context: root `GLOSSARY.md` + `docs/adr/`. See `docs/agents/domain.md`.
 

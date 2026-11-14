@@ -15,6 +15,29 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(),
 }));
 
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: 'Ionicons',
+}));
+
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy',
+  },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
+  },
+}));
+
+jest.mock('expo-audio', () => ({
+  setAudioModeAsync: jest.fn(),
+}));
+
 // Mock react-native-reanimated to avoid babel plugin issues
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
@@ -31,4 +54,3 @@ global.console = {
   warn: jest.fn(),
   error: jest.fn(),
 };
-

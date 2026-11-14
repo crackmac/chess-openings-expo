@@ -7,6 +7,7 @@ import React from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Opening } from '../../types';
 import { OpeningProgress } from '../../types/progress';
+import { useAppTheme } from '../../theme';
 
 interface OpeningCardProps {
   opening: Opening;
@@ -19,24 +20,33 @@ export const OpeningCard: React.FC<OpeningCardProps> = ({
   onPress,
   progress,
 }) => {
+  const { theme } = useAppTheme();
+
   const getDifficultyColor = () => {
     switch (opening.difficulty) {
       case 'beginner':
-        return '#4caf50';
+        return theme.colors.beginner;
       case 'intermediate':
-        return '#ff9800';
+        return theme.colors.intermediate;
       case 'advanced':
-        return '#f44336';
+        return theme.colors.advanced;
       default:
-        return '#757575';
+        return theme.colors.traps;
     }
+  };
+
+  const getColorBadge = () => {
+    if (opening.color === 'white') {
+      return { label: 'WHITE', bg: '#E2E8F0', fg: '#0F172A' };
+    }
+    return { label: 'BLACK', bg: '#0F172A', fg: '#E2E8F0' };
   };
 
   const renderStars = (level: number) => {
     const stars = [];
     for (let i = 0; i < 5; i++) {
       stars.push(
-        <Text key={i} style={styles.star}>
+        <Text key={i} style={[styles.star, { color: theme.colors.accentGold }]}> 
           {i < level ? '★' : '☆'}
         </Text>
       );
@@ -47,13 +57,13 @@ export const OpeningCard: React.FC<OpeningCardProps> = ({
   const getRatingColor = (rating?: 'hard' | 'good' | 'easy') => {
     switch (rating) {
       case 'hard':
-        return '#f44336';
+        return theme.colors.danger;
       case 'good':
-        return '#2196f3';
+        return theme.colors.info;
       case 'easy':
-        return '#4caf50';
+        return theme.colors.success;
       default:
-        return '#999';
+        return theme.colors.textMuted;
     }
   };
 
@@ -70,74 +80,110 @@ export const OpeningCard: React.FC<OpeningCardProps> = ({
     }
   };
 
+  const colorBadge = getColorBadge();
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.colors.surfaceCard,
+          borderColor: theme.colors.borderSubtle,
+          ...theme.shadow.soft,
+        },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
       <View style={styles.header}>
         <View style={styles.titleSection}>
-          <Text style={styles.name}>{opening.name}</Text>
-          <Text style={styles.eco}>{opening.eco}</Text>
-        </View>
-        <View
-          style={[
-            styles.difficultyBadge,
-            { backgroundColor: getDifficultyColor() },
-          ]}
-        >
-          <Text style={styles.difficultyText}>
-            {opening.difficulty.toUpperCase()}
+          <Text style={[styles.name, { color: theme.colors.textPrimary }]}>
+            {opening.name}
           </Text>
+          <Text style={[styles.eco, { color: theme.colors.textSecondary }]}>
+            {opening.eco}
+          </Text>
+        </View>
+
+        <View style={styles.badgesColumn}>
+          <View
+            style={[
+              styles.difficultyBadge,
+              { backgroundColor: getDifficultyColor() },
+            ]}
+          >
+            <Text style={[styles.difficultyText, { color: theme.colors.textOnAccent }]}>
+              {opening.difficulty.toUpperCase()}
+            </Text>
+          </View>
+
+          <View style={[styles.colorBadge, { backgroundColor: colorBadge.bg }]}> 
+            <Text style={[styles.colorBadgeText, { color: colorBadge.fg }]}>
+              {colorBadge.label}
+            </Text>
+          </View>
         </View>
       </View>
 
-      <Text style={styles.description} numberOfLines={2}>
+      <Text
+        style={[styles.description, { color: theme.colors.textSecondary }]}
+        numberOfLines={2}
+      >
         {opening.description}
       </Text>
 
       <View style={styles.tags}>
         {opening.tags.slice(0, 3).map((tag, index) => (
-          <View key={index} style={styles.tag}>
-            <Text style={styles.tagText}>{tag}</Text>
+          <View
+            key={index}
+            style={[styles.tag, { backgroundColor: theme.colors.accentGoldMuted }]}
+          >
+            <Text style={[styles.tagText, { color: theme.colors.accentGold }]}>
+              {tag}
+            </Text>
           </View>
         ))}
       </View>
 
       {progress && (
-        <View style={styles.progress}>
+        <View style={[styles.progress, { borderTopColor: theme.colors.borderSubtle }]}>
           <View style={styles.progressRow}>
-            <Text style={styles.progressLabel}>Practiced:</Text>
-            <Text style={styles.progressValue}>{progress.timesPracticed}x</Text>
+            <Text style={[styles.progressLabel, { color: theme.colors.textMuted }]}>Practiced:</Text>
+            <Text style={[styles.progressValue, { color: theme.colors.textPrimary }]}>
+              {progress.timesPracticed}x
+            </Text>
           </View>
           <View style={styles.progressRow}>
-            <Text style={styles.progressLabel}>Best:</Text>
-            <Text style={styles.progressValue}>
+            <Text style={[styles.progressLabel, { color: theme.colors.textMuted }]}>Best:</Text>
+            <Text style={[styles.progressValue, { color: theme.colors.textPrimary }]}>
               {progress.bestAccuracy.toFixed(0)}%
             </Text>
           </View>
           {progress.difficultyRating && (
             <View style={styles.progressRow}>
-              <Text style={styles.progressLabel}>Rating:</Text>
+              <Text style={[styles.progressLabel, { color: theme.colors.textMuted }]}>Recall:</Text>
               <View
                 style={[
                   styles.ratingBadge,
                   { backgroundColor: getRatingColor(progress.difficultyRating) },
                 ]}
               >
-                <Text style={styles.ratingText}>
+                <Text style={[styles.ratingText, { color: theme.colors.white }]}>
                   {getRatingLabel(progress.difficultyRating)}
                 </Text>
               </View>
             </View>
           )}
           <View style={styles.mastery}>
-            <Text style={styles.masteryLabel}>Mastery:</Text>
+            <Text style={[styles.masteryLabel, { color: theme.colors.textMuted }]}>Mastery:</Text>
             <View style={styles.stars}>{renderStars(progress.masteryLevel)}</View>
           </View>
         </View>
       )}
 
       {!progress && (
-        <View style={styles.newBadge}>
-          <Text style={styles.newBadgeText}>New</Text>
+        <View style={[styles.newBadge, { backgroundColor: 'rgba(46, 204, 113, 0.2)' }]}> 
+          <Text style={[styles.newBadgeText, { color: theme.colors.success }]}>New</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -146,15 +192,10 @@ export const OpeningCard: React.FC<OpeningCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   header: {
     flexDirection: 'row',
@@ -164,30 +205,43 @@ const styles = StyleSheet.create({
   },
   titleSection: {
     flex: 1,
+    paddingRight: 12,
+  },
+  badgesColumn: {
+    alignItems: 'flex-end',
+    gap: 6,
   },
   name: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 4,
   },
   eco: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '500',
   },
   difficultyBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 8,
   },
   difficultyText: {
-    color: '#fff',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '700',
+  },
+  colorBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+  },
+  colorBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   description: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 12,
     lineHeight: 20,
   },
@@ -197,20 +251,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tag: {
-    backgroundColor: '#e3f2fd',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 8,
     marginRight: 6,
     marginBottom: 4,
   },
   tagText: {
     fontSize: 12,
-    color: '#1976d2',
+    fontWeight: '600',
   },
   progress: {
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
     paddingTop: 12,
     marginTop: 8,
   },
@@ -221,12 +273,10 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 12,
-    color: '#666',
   },
   progressValue: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
   },
   mastery: {
     flexDirection: 'row',
@@ -235,7 +285,6 @@ const styles = StyleSheet.create({
   },
   masteryLabel: {
     fontSize: 12,
-    color: '#666',
     marginRight: 8,
   },
   stars: {
@@ -243,31 +292,26 @@ const styles = StyleSheet.create({
   },
   star: {
     fontSize: 14,
-    color: '#ffc107',
     marginRight: 2,
   },
   newBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e8f5e9',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 8,
     marginTop: 8,
   },
   newBadgeText: {
     fontSize: 12,
-    color: '#4caf50',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   ratingBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 8,
   },
   ratingText: {
     fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
-

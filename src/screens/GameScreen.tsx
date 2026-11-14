@@ -4,16 +4,18 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ChessBoard } from '../components/ChessBoard';
 import { DifficultyRating } from '../components/DifficultyRating';
+import { Badge } from '../components/ui';
 import { useOpeningPractice } from '../hooks/useOpeningPractice';
 import { useProgress } from '../hooks/useProgress';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { allOpenings } from '../data/openings';
 import { OpeningRoulette } from '../services/gamification/openingRoulette';
+import { useAppTheme } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type GameRouteProp = RouteProp<RootStackParamList, 'Game'>;
@@ -23,6 +25,7 @@ export const GameScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const { opening: initialOpening, userColor: initialUserColor } = route.params;
   const { getOpeningProgress, progress } = useProgress();
+  const { theme } = useAppTheme();
 
   const {
     opening,
@@ -67,6 +70,12 @@ export const GameScreen: React.FC = () => {
 
   // Track pending action after rating (for completion/failure flow)
   const [pendingAction, setPendingAction] = React.useState<'next' | 'browse' | 'retry' | null>(null);
+  const moveTapeRef = React.useRef<ScrollView | null>(null);
+
+  const openingName = opening?.name ?? initialOpening.name;
+  const openingEco = opening?.eco ?? initialOpening.eco;
+  const expectedLineLength = opening?.mainLine.length ?? initialOpening.mainLine.length;
+  const currentPly = Math.min(moveHistory.length + 1, expectedLineLength || 1);
 
   const handleMove = (move: { from: string; to: string; san: string }) => {
     if (selectedSquare) {
@@ -123,8 +132,8 @@ export const GameScreen: React.FC = () => {
       attempts++;
     }
 
-    // Random color assignment
-    const randomUserColor = Math.random() < 0.5 ? 'white' : 'black';
+    // Default user color should match opening repertoire side
+    const randomUserColor = nextOpening.color;
 
     // Load new opening in same session
     setOpening(nextOpening, randomUserColor);
@@ -154,9 +163,15 @@ export const GameScreen: React.FC = () => {
     switch (sessionOutcome) {
       case 'active':
         return (
-          <View style={styles.controls}>
+          <View style={styles.controlsRow}>
             <TouchableOpacity
-              style={[styles.button, styles.buttonSecondary]}
+              style={[styles.buttonHalf, { backgroundColor: theme.colors.bgElevated, borderColor: theme.colors.borderSubtle, borderWidth: 1 }]}
+              onPress={resetSession}
+            >
+              <Text style={[styles.buttonText, { color: theme.colors.textPrimary }]}>Restart</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.buttonHalf, { backgroundColor: theme.colors.info }]}
               onPress={() => {
                 const completed = checkOpeningCompletion();
                 endSession(completed);
@@ -164,47 +179,47 @@ export const GameScreen: React.FC = () => {
                 navigation.navigate('MainTabs');
               }}
             >
-              <Text style={styles.buttonText}>End Session</Text>
+              <Text style={[styles.buttonText, { color: theme.colors.white }]}>End Drill</Text>
             </TouchableOpacity>
           </View>
         );
 
       case 'completed':
         return (
-          <View style={styles.controls}>
+          <View style={styles.controlsRow}>
             <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary]}
+              style={[styles.buttonHalf, { backgroundColor: theme.colors.accentGold }]}
               onPress={handleNextOpening}
             >
-              <Text style={styles.buttonText}>Next Opening</Text>
+              <Text style={[styles.buttonText, { color: theme.colors.textOnAccent }]}>Next Drill</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.buttonSecondary]}
+              style={[styles.buttonHalf, { backgroundColor: theme.colors.info }]}
               onPress={handleBrowseOpenings}
             >
-              <Text style={styles.buttonText}>Browse Openings</Text>
+              <Text style={[styles.buttonText, { color: theme.colors.white }]}>Browse</Text>
             </TouchableOpacity>
           </View>
         );
 
       case 'failed':
         return (
-          <View style={styles.controls}>
+          <View style={styles.controlsRow}>
             <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary]}
+              style={[styles.buttonHalf, { backgroundColor: theme.colors.accentGold }]}
               onPress={handleTryAgain}
             >
-              <Text style={styles.buttonText}>Try Again</Text>
+              <Text style={[styles.buttonText, { color: theme.colors.textOnAccent }]}>Try Again</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, styles.buttonSecondary]}
+              style={[styles.buttonHalf, { backgroundColor: theme.colors.info }]}
               onPress={() => {
                 // For failed sessions, show rating prompt first
                 setPendingAction('browse');
                 triggerRatingPrompt();
               }}
             >
-              <Text style={styles.buttonText}>Choose Different</Text>
+              <Text style={[styles.buttonText, { color: theme.colors.white }]}>Choose Different</Text>
             </TouchableOpacity>
           </View>
         );
@@ -213,10 +228,10 @@ export const GameScreen: React.FC = () => {
         return (
           <View style={styles.controls}>
             <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary]}
+              style={[styles.button, { backgroundColor: theme.colors.accentGold }]}
               onPress={() => navigation.navigate('MainTabs')}
             >
-              <Text style={styles.buttonText}>Browse Openings</Text>
+              <Text style={[styles.buttonText, { color: theme.colors.textOnAccent }]}>Browse Openings</Text>
             </TouchableOpacity>
           </View>
         );
@@ -227,73 +242,99 @@ export const GameScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.subtitle}>
-          Playing as {userColor === 'white' ? 'White' : 'Black'}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.bgPrimary }]}> 
+      <View style={[styles.topBar, { borderBottomColor: theme.colors.borderSubtle }]}> 
+        <TouchableOpacity
+          style={[styles.backButton, { borderColor: theme.colors.borderSubtle, backgroundColor: theme.colors.bgElevated }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={[styles.backButtonText, { color: theme.colors.textPrimary }]}>Back</Text>
+        </TouchableOpacity>
+
+        <View style={styles.openingHeaderGroup}>
+          <Text style={[styles.openingTitle, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+            {openingName}
+          </Text>
+          <View style={styles.openingMetaRow}>
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>{openingEco}</Text>
+            <Badge
+              label={userColor === 'white' ? 'White' : 'Black'}
+              tone="accent"
+              style={styles.repertoireBadge}
+            />
+          </View>
+        </View>
+
+        <Text style={[styles.progressCounter, { color: theme.colors.textMuted }]}>
+          {`Move ${currentPly} of ${expectedLineLength || 1}`}
         </Text>
       </View>
 
-      {sessionOutcome === 'completed' && opening && (
-        <View style={styles.completionBanner}>
-          <Text style={styles.completionText}>
-            🎉 You know the {opening.name} opening!
+      <View style={[styles.feedbackStrip, { backgroundColor: theme.colors.bgSecondary }]}> 
+        {lastMoveCorrect === null ? (
+          <Text style={[styles.feedbackText, { color: theme.colors.textSecondary }]}> 
+            {isUserTurn ? 'Your move' : 'AI is thinking...'}
           </Text>
-        </View>
-      )}
-
-      {sessionOutcome === 'active' && opening && (
-        <View style={styles.stats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Accuracy</Text>
-            <Text style={styles.statValue}>{accuracy.toFixed(0)}%</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Correct</Text>
-            <Text style={styles.statValue}>
-              {correctMoves}/{totalMoves}
+        ) : (
+          <>
+            <Text
+              style={[
+                styles.feedbackText,
+                { color: lastMoveCorrect ? theme.colors.success : theme.colors.danger },
+              ]}
+            >
+              {lastMoveCorrect ? 'Correct move' : 'Not in opening theory'}
             </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Turn</Text>
-            <Text style={styles.statValue}>
-              {isUserTurn ? 'Your Turn' : 'AI Turn'}
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {lastMoveCorrect !== null && (
-        <View
-          style={[
-            styles.feedback,
-            lastMoveCorrect ? styles.feedbackCorrect : styles.feedbackIncorrect,
-          ]}
-        >
-          <Text style={styles.feedbackText}>
-            {lastMoveCorrect ? '✓ Correct Move!' : '✗ Not in Opening Theory'}
-          </Text>
-          {!lastMoveCorrect && expectedMove && (
-            <Text style={styles.expectedMoveText}>
-              Expected: {expectedMove.san}
-            </Text>
-          )}
-        </View>
-      )}
-
-      <View style={styles.boardContainer}>
-        <ChessBoard
-          engine={engine}
-          onMove={handleMove}
-          flipped={userColor === 'black'}
-          showValidMoves={true}
-          selectedSquare={selectedSquare}
-          onSquareSelect={handleSquarePress}
-          lastMove={lastMove}
-        />
+            {!lastMoveCorrect && expectedMove && (
+              <Text style={[styles.expectedMoveText, { color: theme.colors.warning }]}> 
+                Expected: {expectedMove.san}
+              </Text>
+            )}
+          </>
+        )}
       </View>
 
-      {renderActionButtons()}
+      <View style={styles.boardZone}>
+        <View style={[styles.boardContainer, { backgroundColor: theme.colors.bgSecondary, borderColor: theme.colors.borderSubtle, ...theme.shadow.soft }]}> 
+          <ChessBoard
+            engine={engine}
+            onMove={handleMove}
+            flipped={userColor === 'black'}
+            showValidMoves={true}
+            selectedSquare={selectedSquare}
+            onSquareSelect={handleSquarePress}
+            lastMove={lastMove}
+          />
+        </View>
+      </View>
+
+      <View style={[styles.moveTape, { borderTopColor: theme.colors.borderSubtle, borderBottomColor: theme.colors.borderSubtle }]}> 
+        <ScrollView
+          ref={moveTapeRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          onContentSizeChange={() => moveTapeRef.current?.scrollToEnd({ animated: true })}
+          contentContainerStyle={styles.moveTapeContent}
+        >
+          <Text style={[styles.moveTapeText, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+            {moveHistory.length > 0
+              ? moveHistory
+                  .map((move, idx) => (
+                    `${idx % 2 === 0 ? `${Math.floor(idx / 2) + 1}.` : ''} ${move.san}`
+                  ))
+                  .join(' ')
+              : 'No moves yet'}
+          </Text>
+        </ScrollView>
+      </View>
+
+      <View style={[styles.bottomBar, { backgroundColor: theme.colors.bgSecondary, borderTopColor: theme.colors.borderSubtle }]}> 
+        <View style={styles.statsCompact}>
+          <Text style={[styles.statCompactText, { color: theme.colors.textSecondary }]}>Accuracy {accuracy.toFixed(0)}%</Text>
+          <Text style={[styles.statCompactText, { color: theme.colors.textSecondary }]}>Correct {correctMoves}/{totalMoves}</Text>
+        </View>
+        {renderActionButtons()}
+      </View>
 
       <DifficultyRating
         visible={showRatingPrompt}
@@ -336,160 +377,142 @@ export const GameScreen: React.FC = () => {
           }
         }}
       />
-
-      {moveHistory.length > 0 && (
-        <View style={styles.moveHistory}>
-          <Text style={styles.moveHistoryTitle}>Move History:</Text>
-          <ScrollView horizontal style={styles.moveHistoryScroll}>
-            <Text style={styles.moveHistoryText}>
-              {moveHistory.map((move, idx) => (
-                <Text key={idx}>
-                  {idx % 2 === 0 ? `\n${Math.floor(idx / 2) + 1}. ` : ' '}
-                  {move.san}
-                </Text>
-              ))}
-            </Text>
-          </ScrollView>
-        </View>
-      )}
-      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
-  content: {
-    padding: 20,
-  },
-  header: {
+  topBar: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    gap: 10,
+  },
+  backButton: {
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  backButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  openingHeaderGroup: {
+    flex: 1,
+    minWidth: 0,
+  },
+  openingTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  openingMetaRow: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  repertoireBadge: {
+    paddingVertical: 2,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  stats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 15,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statLabel: {
     fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
+    fontWeight: '600',
   },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  progressCounter: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'right',
+    minWidth: 70,
   },
-  completionBanner: {
-    backgroundColor: '#4caf50',
-    padding: 20,
-    borderRadius: 8,
-    marginBottom: 15,
+  feedbackStrip: {
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     alignItems: 'center',
-  },
-  completionText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  tapToContinueText: {
-    fontSize: 14,
-    color: '#fff',
-    textAlign: 'center',
-    opacity: 0.9,
-    fontStyle: 'italic',
-  },
-  feedback: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  feedbackCorrect: {
-    backgroundColor: '#c8e6c9',
-  },
-  feedbackIncorrect: {
-    backgroundColor: '#ffcdd2',
+    justifyContent: 'center',
   },
   feedbackText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 15,
+    fontWeight: '700',
   },
   expectedMoveText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#d32f2f',
-    marginTop: 6,
+    marginTop: 4,
     fontFamily: 'monospace',
   },
-  boardContainer: {
+  boardZone: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  boardContainer: {
+    borderRadius: 12,
+    borderWidth: 1,
     padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  moveTape: {
+    height: 44,
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+  moveTapeContent: {
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  moveTapeText: {
+    fontSize: 13,
+    fontFamily: 'monospace',
+  },
+  bottomBar: {
+    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  statsCompact: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statCompactText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   controls: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: 20,
+    justifyContent: 'center',
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
   },
   button: {
-    paddingHorizontal: 30,
+    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     minWidth: 120,
   },
-  buttonPrimary: {
-    backgroundColor: '#4caf50', // Green
-  },
-  buttonSecondary: {
-    backgroundColor: '#2196f3', // Blue
+  buttonHalf: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
-    fontSize: 16,
-  },
-  moveHistory: {
-    marginTop: 10,
-    padding: 15,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-  },
-  moveHistoryTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  moveHistoryScroll: {
-    maxHeight: 100,
-  },
-  moveHistoryText: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: 15,
   },
 });
-

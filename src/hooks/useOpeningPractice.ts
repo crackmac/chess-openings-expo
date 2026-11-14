@@ -11,6 +11,7 @@ import { useChessGame } from "./useChessGame";
 import { useProgress } from "./useProgress";
 import { GamificationTracker } from "../services/gamification/gamificationTracker";
 import { ProgressTracker } from "../services/storage/progressTracker";
+import { sensoryFeedback } from "../services/feedback/sensoryFeedback";
 
 type SessionOutcome = 'active' | 'completed' | 'failed' | 'theory_exhausted';
 
@@ -110,6 +111,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
               );
               if (executedMove && aiOpponent) {
                 aiOpponent.recordUserMove(executedMove);
+                void sensoryFeedback.trigger('move');
               }
             }
           }, 300);
@@ -160,13 +162,13 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
     }
 
     // Check if we're still in opening theory by checking if expected move exists
-    const expectedMove = OpeningDatabase.getExpectedMove(
+    const nextExpectedMove = OpeningDatabase.getExpectedMove(
       opening,
       moveHistory,
       engine.getTurn()
     );
-    return expectedMove === null;
-  }, [opening, moveHistory, engine]);
+    return nextExpectedMove === null;
+  }, [opening, moveHistory, engine, aiOpponent]);
 
   const makeUserMove = useCallback(
     (from: string, to: string): boolean => {
@@ -189,6 +191,11 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       setTotalMoves((prev) => prev + 1);
       if (isCorrect) {
         setCorrectMoves((prev) => prev + 1);
+        if (move.san.includes('x')) {
+          void sensoryFeedback.trigger('capture');
+        } else {
+          void sensoryFeedback.trigger('move');
+        }
 
         // Check if opening is completed after this correct move
         // Check immediately with updated moveHistory (move was just added)
@@ -202,6 +209,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
           // Don't show rating prompt yet - wait for user to click a button
           setOpeningCompleted(true);
           setSessionOutcome('completed');
+          void sensoryFeedback.trigger('drillComplete');
           endSession(false);
           return true; // Return early, don't continue with AI move if opening is completed
         }
@@ -219,6 +227,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
         setExpectedMove(expected);
         setHasMadeMistake(true);
         setSessionOutcome('failed');
+        void sensoryFeedback.trigger('mistake');
         setTimeout(() => {
           endSession(false); // Don't show rating prompt yet - wait for button click
         }, 100);
@@ -254,6 +263,14 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
             if (executedMove && aiOpponent) {
               // Record the executed move in AI's history
               aiOpponent.recordUserMove(executedMove);
+              if (executedMove.san.includes('x')) {
+                void sensoryFeedback.trigger('capture');
+              } else {
+                void sensoryFeedback.trigger('move');
+              }
+              if (engine.isCheck()) {
+                void sensoryFeedback.trigger('check');
+              }
               // currentTurn state will be updated by makeMove in useChessGame,
               // which will trigger a re-render and update isUserTurn
 
@@ -269,6 +286,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
                 // Don't show rating prompt yet - wait for user to click a button
                 setOpeningCompleted(true);
                 setSessionOutcome('completed');
+                void sensoryFeedback.trigger('drillComplete');
                 endSession(false);
               }
               // Don't check theory exhaustion here - let the user make their move first
@@ -309,6 +327,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       engine,
       sessionEnded,
       checkOpeningCompletionWithHistory,
+      moveHistory,
     ]
   );
 
@@ -417,6 +436,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
       updateProgress,
       saveSessionStats,
       sessionStartTime,
+      openingCompleted,
     ]
   );
 
@@ -487,6 +507,7 @@ export const useOpeningPractice = (): UseOpeningPracticeReturn => {
             );
             if (executedMove && aiOpponent) {
               aiOpponent.recordUserMove(executedMove);
+              void sensoryFeedback.trigger('move');
             }
           }
         }

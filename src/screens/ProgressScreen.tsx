@@ -20,11 +20,13 @@ import { Opening } from '../types';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { XPProgressBar } from '../components/XPProgressBar';
 import { AchievementCard } from '../components/AchievementCard';
+import { useAppTheme } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ProgressScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { theme } = useAppTheme();
   const {
     progress,
     sessionHistory,
@@ -78,7 +80,7 @@ export const ProgressScreen: React.FC = () => {
     const stars = [];
     for (let i = 0; i < 5; i++) {
       stars.push(
-        <Text key={i} style={styles.star}>
+        <Text key={i} style={[styles.star, { color: theme.colors.accentGold }]}> 
           {i < level ? '★' : '☆'}
         </Text>
       );
@@ -89,13 +91,13 @@ export const ProgressScreen: React.FC = () => {
   const getRatingColor = (rating?: 'hard' | 'good' | 'easy') => {
     switch (rating) {
       case 'hard':
-        return '#f44336';
+        return theme.colors.danger;
       case 'good':
-        return '#2196f3';
+        return theme.colors.info;
       case 'easy':
-        return '#4caf50';
+        return theme.colors.success;
       default:
-        return '#999';
+        return theme.colors.textMuted;
     }
   };
 
@@ -155,224 +157,223 @@ export const ProgressScreen: React.FC = () => {
 
   // Get accuracy color
   const getAccuracyColor = (accuracy: number): string => {
-    if (accuracy >= 80) return '#4caf50';
-    if (accuracy >= 60) return '#ff9800';
-    return '#f44336';
+    if (accuracy >= 80) return theme.colors.success;
+    if (accuracy >= 60) return theme.colors.warning;
+    return theme.colors.danger;
   };
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Progress</Text>
+      <View style={[styles.container, { backgroundColor: theme.colors.bgPrimary }]}> 
+        <View style={[styles.header, { backgroundColor: theme.colors.bgSecondary, borderBottomColor: theme.colors.borderSubtle }]}> 
+          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Progress</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading progress...</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>Loading progress...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Your Progress</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.bgPrimary }]}> 
+      <View style={[styles.header, { backgroundColor: theme.colors.bgSecondary, borderBottomColor: theme.colors.borderSubtle }]}> 
+        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Your Progress</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
+        {/* XP/Level Card */}
+        {gamificationData && (
+          <View style={[styles.xpCard, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle, ...theme.shadow.soft }]}> 
+            <XPProgressBar
+              level={gamificationData.level}
+              currentXP={gamificationData.totalXP}
+              xpForNextLevel={gamificationData.xpForNextLevel}
+            />
+          </View>
+        )}
 
-      {/* XP/Level Card */}
-      {gamificationData && (
-        <View style={styles.xpCard}>
-          <XPProgressBar
-            level={gamificationData.level}
-            currentXP={gamificationData.totalXP}
-            xpForNextLevel={gamificationData.xpForNextLevel}
-          />
+        {/* Overall Statistics */}
+        <View style={[styles.statsCard, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle, ...theme.shadow.soft }]}> 
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Overall Statistics</Text>
+          <View style={styles.statsGrid}>
+            <View style={[styles.statBox, { backgroundColor: theme.colors.bgSecondary }]}> 
+              <Text style={[styles.statValue, { color: theme.colors.accentGold }]}>{userStats.totalSessions}</Text>
+              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Total Sessions</Text>
+            </View>
+            <View style={[styles.statBox, { backgroundColor: theme.colors.bgSecondary }]}> 
+              <Text style={[styles.statValue, { color: theme.colors.accentGold }]}>{userStats.totalOpeningsPracticed}</Text>
+              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Openings Practiced</Text>
+            </View>
+            <View style={[styles.statBox, { backgroundColor: theme.colors.bgSecondary }]}> 
+              <Text style={[styles.statValue, { color: theme.colors.accentGold }]}> 
+                {userStats.averageAccuracy.toFixed(0)}%
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Avg Accuracy</Text>
+            </View>
+            <View style={[styles.statBox, { backgroundColor: theme.colors.bgSecondary }]}> 
+              <View style={styles.streakContainer}>
+                <Text style={styles.streakIcon}>🔥</Text>
+                <Text style={[styles.statValue, { color: theme.colors.accentGold }]}> 
+                  {gamificationData?.currentStreak || userStats.currentStreak}
+                </Text>
+              </View>
+              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>Day Streak</Text>
+            </View>
+          </View>
         </View>
-      )}
 
-      {/* Overall Statistics */}
-      <View style={styles.statsCard}>
-        <Text style={styles.sectionTitle}>Overall Statistics</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{userStats.totalSessions}</Text>
-            <Text style={styles.statLabel}>Total Sessions</Text>
+        {/* Recent Achievements */}
+        {gamificationData && unlockedAchievements.length > 0 && (
+          <View style={[styles.achievementsCard, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle, ...theme.shadow.soft }]}> 
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Recent Achievements</Text>
+            {unlockedAchievements.slice(0, 3).map((achievement) => (
+              <AchievementCard
+                key={achievement.id}
+                achievement={achievement}
+                unlocked={true}
+                compact={true}
+              />
+            ))}
+            {unlockedAchievements.length > 3 && (
+              <Text style={[styles.viewMoreText, { color: theme.colors.textSecondary }]}> 
+                +{unlockedAchievements.length - 3} more achievements unlocked
+              </Text>
+            )}
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{userStats.totalOpeningsPracticed}</Text>
-            <Text style={styles.statLabel}>Openings Practiced</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>
-              {userStats.averageAccuracy.toFixed(0)}%
-            </Text>
-            <Text style={styles.statLabel}>Avg Accuracy</Text>
-          </View>
-          <View style={styles.statBox}>
-            <View style={styles.streakContainer}>
-              <Text style={styles.streakIcon}>🔥</Text>
-              <Text style={styles.statValue}>
-                {gamificationData?.currentStreak || userStats.currentStreak}
+        )}
+
+        {/* Opening Progress List */}
+        <View style={[styles.progressCard, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle, ...theme.shadow.soft }]}> 
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Opening Progress</Text>
+          {sortedOpenings.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyStateText, { color: theme.colors.textPrimary }]}> 
+                No openings practiced yet
+              </Text>
+              <Text style={[styles.emptyStateSubtext, { color: theme.colors.textSecondary }]}> 
+                Start practicing to track your progress!
               </Text>
             </View>
-            <Text style={styles.statLabel}>Day Streak</Text>
-          </View>
-        </View>
-      </View>
+          ) : (
+            sortedOpenings.map(({ opening, progress: openingProgress }) => (
+              <TouchableOpacity
+                key={opening.id}
+                style={[styles.openingItem, { borderBottomColor: theme.colors.borderSubtle }]}
+                onPress={() => handleOpeningPress(opening)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.openingHeader}>
+                  <View style={styles.openingInfo}>
+                    <Text style={[styles.openingName, { color: theme.colors.textPrimary }]}>{opening.name}</Text>
+                    <Text style={[styles.openingEco, { color: theme.colors.textSecondary }]}>{opening.eco}</Text>
+                  </View>
+                  {openingProgress?.difficultyRating && (
+                    <View
+                      style={[
+                        styles.ratingBadge,
+                        { backgroundColor: getRatingColor(openingProgress.difficultyRating) },
+                      ]}
+                    >
+                      <Text style={styles.ratingText}> 
+                        {getRatingLabel(openingProgress.difficultyRating)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
 
-      {/* Recent Achievements */}
-      {gamificationData && unlockedAchievements.length > 0 && (
-        <View style={styles.achievementsCard}>
-          <Text style={styles.sectionTitle}>Recent Achievements</Text>
-          {unlockedAchievements.slice(0, 3).map((achievement) => (
-            <AchievementCard
-              key={achievement.id}
-              achievement={achievement}
-              unlocked={true}
-              compact={true}
-            />
-          ))}
-          {unlockedAchievements.length > 3 && (
-            <Text style={styles.viewMoreText}>
-              +{unlockedAchievements.length - 3} more achievements unlocked
+                {openingProgress ? (
+                  <View style={styles.progressDetails}>
+                    <View style={styles.progressRow}>
+                      <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>Practiced:</Text>
+                      <Text style={[styles.progressValue, { color: theme.colors.textPrimary }]}> 
+                        {openingProgress.timesPracticed}x
+                      </Text>
+                    </View>
+                    <View style={styles.progressRow}>
+                      <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>Best Accuracy:</Text>
+                      <Text style={[styles.progressValue, { color: theme.colors.textPrimary }]}> 
+                        {openingProgress.bestAccuracy.toFixed(0)}%
+                      </Text>
+                    </View>
+                    <View style={styles.progressRow}>
+                      <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>Avg Accuracy:</Text>
+                      <Text style={[styles.progressValue, { color: theme.colors.textPrimary }]}> 
+                        {openingProgress.averageAccuracy.toFixed(0)}%
+                      </Text>
+                    </View>
+                    <View style={styles.masteryRow}>
+                      <Text style={[styles.progressLabel, { color: theme.colors.textSecondary }]}>Mastery:</Text>
+                      <View style={styles.stars}>
+                        {renderStars(openingProgress.masteryLevel)}
+                      </View>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.noProgress}>
+                    <Text style={[styles.noProgressText, { color: theme.colors.textMuted }]}>Not practiced yet</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
+        {/* Session History */}
+        <View style={[styles.progressCard, { backgroundColor: theme.colors.surfaceCard, borderColor: theme.colors.borderSubtle, ...theme.shadow.soft }]}> 
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Recent Sessions</Text>
+          {sessionHistory.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyStateText, { color: theme.colors.textPrimary }]}>No practice sessions yet</Text>
+              <Text style={[styles.emptyStateSubtext, { color: theme.colors.textSecondary }]}> 
+                Complete a practice session to see your history here
+              </Text>
+            </View>
+          ) : (
+            sessionHistory.slice(0, 10).map((session) => (
+              <View key={session.sessionId} style={[styles.sessionItem, { borderBottomColor: theme.colors.borderSubtle }]}> 
+                <View style={styles.sessionHeader}>
+                  <View style={styles.sessionInfo}>
+                    <Text style={[styles.sessionOpeningName, { color: theme.colors.textPrimary }]}> 
+                      {getOpeningName(session.openingId)}
+                    </Text>
+                    <Text style={[styles.sessionDate, { color: theme.colors.textSecondary }]}> 
+                      {formatDate(session.date)}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.accuracyBadge,
+                      { backgroundColor: getAccuracyColor(session.accuracy) },
+                    ]}
+                  >
+                    <Text style={styles.accuracyText}> 
+                      {session.accuracy.toFixed(0)}%
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.sessionDetails}>
+                  <View style={styles.sessionDetailRow}>
+                    <Text style={[styles.sessionDetailLabel, { color: theme.colors.textSecondary }]}>Moves:</Text>
+                    <Text style={[styles.sessionDetailValue, { color: theme.colors.textPrimary }]}> 
+                      {session.correctMoves}/{session.totalMoves}
+                    </Text>
+                  </View>
+                  <View style={styles.sessionDetailRow}>
+                    <Text style={[styles.sessionDetailLabel, { color: theme.colors.textSecondary }]}>Duration:</Text>
+                    <Text style={[styles.sessionDetailValue, { color: theme.colors.textPrimary }]}> 
+                      {formatDuration(session.duration)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))
+          )}
+          {sessionHistory.length > 10 && (
+            <Text style={[styles.moreSessionsText, { color: theme.colors.textMuted }]}> 
+              Showing 10 most recent sessions
             </Text>
           )}
         </View>
-      )}
-
-      {/* Opening Progress List */}
-      <View style={styles.progressCard}>
-        <Text style={styles.sectionTitle}>Opening Progress</Text>
-        {sortedOpenings.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              No openings practiced yet
-            </Text>
-            <Text style={styles.emptyStateSubtext}>
-              Start practicing to track your progress!
-            </Text>
-          </View>
-        ) : (
-          sortedOpenings.map(({ opening, progress }) => (
-            <TouchableOpacity
-              key={opening.id}
-              style={styles.openingItem}
-              onPress={() => handleOpeningPress(opening)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.openingHeader}>
-                <View style={styles.openingInfo}>
-                  <Text style={styles.openingName}>{opening.name}</Text>
-                  <Text style={styles.openingEco}>{opening.eco}</Text>
-                </View>
-                {progress?.difficultyRating && (
-                  <View
-                    style={[
-                      styles.ratingBadge,
-                      { backgroundColor: getRatingColor(progress.difficultyRating) },
-                    ]}
-                  >
-                    <Text style={styles.ratingText}>
-                      {getRatingLabel(progress.difficultyRating)}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {progress ? (
-                <View style={styles.progressDetails}>
-                  <View style={styles.progressRow}>
-                    <Text style={styles.progressLabel}>Practiced:</Text>
-                    <Text style={styles.progressValue}>
-                      {progress.timesPracticed}x
-                    </Text>
-                  </View>
-                  <View style={styles.progressRow}>
-                    <Text style={styles.progressLabel}>Best Accuracy:</Text>
-                    <Text style={styles.progressValue}>
-                      {progress.bestAccuracy.toFixed(0)}%
-                    </Text>
-                  </View>
-                  <View style={styles.progressRow}>
-                    <Text style={styles.progressLabel}>Avg Accuracy:</Text>
-                    <Text style={styles.progressValue}>
-                      {progress.averageAccuracy.toFixed(0)}%
-                    </Text>
-                  </View>
-                  <View style={styles.masteryRow}>
-                    <Text style={styles.progressLabel}>Mastery:</Text>
-                    <View style={styles.stars}>
-                      {renderStars(progress.masteryLevel)}
-                    </View>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.noProgress}>
-                  <Text style={styles.noProgressText}>Not practiced yet</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-
-      {/* Session History */}
-      <View style={styles.progressCard}>
-        <Text style={styles.sectionTitle}>Recent Sessions</Text>
-        {sessionHistory.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No practice sessions yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Complete a practice session to see your history here
-            </Text>
-          </View>
-        ) : (
-          sessionHistory.slice(0, 10).map((session) => (
-            <View key={session.sessionId} style={styles.sessionItem}>
-              <View style={styles.sessionHeader}>
-                <View style={styles.sessionInfo}>
-                  <Text style={styles.sessionOpeningName}>
-                    {getOpeningName(session.openingId)}
-                  </Text>
-                  <Text style={styles.sessionDate}>
-                    {formatDate(session.date)}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.accuracyBadge,
-                    { backgroundColor: getAccuracyColor(session.accuracy) },
-                  ]}
-                >
-                  <Text style={styles.accuracyText}>
-                    {session.accuracy.toFixed(0)}%
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.sessionDetails}>
-                <View style={styles.sessionDetailRow}>
-                  <Text style={styles.sessionDetailLabel}>Moves:</Text>
-                  <Text style={styles.sessionDetailValue}>
-                    {session.correctMoves}/{session.totalMoves}
-                  </Text>
-                </View>
-                <View style={styles.sessionDetailRow}>
-                  <Text style={styles.sessionDetailLabel}>Duration:</Text>
-                  <Text style={styles.sessionDetailValue}>
-                    {formatDuration(session.duration)}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          ))
-        )}
-        {sessionHistory.length > 10 && (
-          <Text style={styles.moreSessionsText}>
-            Showing 10 most recent sessions
-          </Text>
-        )}
-      </View>
       </ScrollView>
     </View>
   );
@@ -381,7 +382,6 @@ export const ProgressScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   content: {
     padding: 20,
@@ -389,16 +389,13 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
+    paddingTop: 56,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
     marginBottom: 0,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 4,
   },
   loadingContainer: {
@@ -409,45 +406,28 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#666',
   },
   xpCard: {
-    backgroundColor: '#fff',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   statsCard: {
-    backgroundColor: '#fff',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   achievementsCard: {
-    backgroundColor: '#fff',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 16,
   },
   statsGrid: {
@@ -457,7 +437,6 @@ const styles = StyleSheet.create({
   },
   statBox: {
     width: '48%',
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     padding: 16,
     marginBottom: 12,
@@ -465,13 +444,11 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2196f3',
+    fontWeight: '700',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
     textAlign: 'center',
   },
   streakContainer: {
@@ -485,24 +462,18 @@ const styles = StyleSheet.create({
   },
   viewMoreText: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
   },
   progressCard: {
-    backgroundColor: '#fff',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 20,
   },
   openingItem: {
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
     paddingVertical: 16,
   },
   openingHeader: {
@@ -516,23 +487,21 @@ const styles = StyleSheet.create({
   },
   openingName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
     marginBottom: 4,
   },
   openingEco: {
     fontSize: 14,
-    color: '#666',
   },
   ratingBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 8,
   },
   ratingText: {
     fontSize: 12,
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   progressDetails: {
     marginTop: 8,
@@ -544,12 +513,10 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    color: '#666',
   },
   progressValue: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
   },
   masteryRow: {
     flexDirection: 'row',
@@ -562,7 +529,6 @@ const styles = StyleSheet.create({
   },
   star: {
     fontSize: 16,
-    color: '#ffc107',
     marginRight: 2,
   },
   noProgress: {
@@ -570,7 +536,6 @@ const styles = StyleSheet.create({
   },
   noProgressText: {
     fontSize: 14,
-    color: '#999',
     fontStyle: 'italic',
   },
   emptyState: {
@@ -579,16 +544,14 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: '#999',
+    textAlign: 'center',
   },
   sessionItem: {
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
     paddingVertical: 16,
   },
   sessionHeader: {
@@ -603,12 +566,10 @@ const styles = StyleSheet.create({
   sessionOpeningName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
   },
   sessionDate: {
     fontSize: 12,
-    color: '#666',
   },
   accuracyBadge: {
     paddingHorizontal: 10,
@@ -619,7 +580,7 @@ const styles = StyleSheet.create({
   },
   accuracyText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#fff',
   },
   sessionDetails: {
@@ -633,20 +594,16 @@ const styles = StyleSheet.create({
   },
   sessionDetailLabel: {
     fontSize: 12,
-    color: '#666',
     marginRight: 4,
   },
   sessionDetailValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#333',
   },
   moreSessionsText: {
     fontSize: 12,
-    color: '#999',
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
   },
 });
-

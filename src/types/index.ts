@@ -6,4 +6,4 @@ export * from './chess';
 export * from './opening';
 export * from './progress';
 export * from './gamification';
-
+export * from './preferences';
